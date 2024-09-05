@@ -5,9 +5,9 @@ using System.Text;
 
 namespace IOT_UI.Controllers
 {
-    public class UserController : BaseController
+    public class RoleController : BaseController
     {
-        public UserController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        public RoleController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
         private IActionResult RedirectToLoginIfNeeded()
         {
@@ -27,21 +27,21 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            var users = await GetAllUsers();
-            return View(users);
+            var role = await GetAllRoles();
+            return View(role);
         }
 
         [HttpGet]
-        public async Task<List<UsersViewModel>> GetAllUsers()
+        public async Task<List<RoleViewModel>> GetAllRoles()
         {
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/GetAllUsers";
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetAllRoles";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<UsersViewModel>>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<RoleViewModel>>>(data);
 
                 if (apiResponse != null && apiResponse.Success)
                 {
@@ -49,9 +49,8 @@ namespace IOT_UI.Controllers
                 }
             }
 
-            return new List<UsersViewModel>();
+            return new List<RoleViewModel>();
         }
-
 
         public IActionResult Create()
         {
@@ -61,17 +60,12 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            var userEmail = HttpContext.Session.GetString("UserEmail");
-            var model = new UsersViewModel
-            {
-                CustomerEmail = userEmail
-            };
-            return View(model);
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(UsersViewModel user, string ConfirmPassword)
+        public async Task<IActionResult> Create(RoleViewModel customer)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -79,35 +73,15 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            if (!ModelState.IsValid)
-            {
-                return View(user);
-            }
-
-            // Check if the password and confirm password match
-            if (user.Password != ConfirmPassword)
-            {
-                ModelState.AddModelError("ConfirmPassword", "Passwords do not match.");
-                return View(user);
-            }
-
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/Register";
-            var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/CreateRole";
+            var content = new StringContent(JsonConvert.SerializeObject(customer), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
-            if (response.IsSuccessStatusCode)
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            else
-            {
-                ViewBag.Message = "Error creating user. Please try again.";
-                return View(user);
-            }
+            return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> Edit(Guid id)
+        public async Task<IActionResult> Edit(Guid? id)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -121,13 +95,13 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/GetUserById/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetRoleById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UsersViewModel>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<RoleViewModel>>(data);
 
                 if (apiResponse != null && apiResponse.Success)
                 {
@@ -140,7 +114,7 @@ namespace IOT_UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(UsersViewModel user)
+        public async Task<IActionResult> Edit(RoleViewModel customer)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -149,8 +123,8 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/UpdateUser";
-            var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/UpdateRole";
+            var content = new StringContent(JsonConvert.SerializeObject(customer), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, content);
 
             if (response.IsSuccessStatusCode)
@@ -158,11 +132,10 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(user);
+            return View(customer);
         }
 
-
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid? id)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -176,13 +149,13 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/GetUserById/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetRoleById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UsersViewModel>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<RoleViewModel>>(data);
 
                 if (apiResponse != null && apiResponse.Success)
                 {
@@ -204,7 +177,7 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/DeleteUser/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/DeleteRole/{id}";
             HttpResponseMessage response = await _httpClient.DeleteAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -214,7 +187,6 @@ namespace IOT_UI.Controllers
 
             return NotFound();
         }
-
 
         public async Task<IActionResult> Details(Guid? id)
         {
@@ -230,13 +202,13 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/GetUserById/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetRoleById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UsersViewModel>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<RoleViewModel>>(data);
 
                 if (apiResponse != null && apiResponse.Success)
                 {

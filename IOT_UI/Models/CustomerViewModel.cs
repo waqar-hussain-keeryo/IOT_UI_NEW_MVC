@@ -4,6 +4,7 @@ namespace IOT_UI.Models
 {
     public class CustomerViewModel
     {
+        [Required]
         public Guid CustomerID { get; set; }
         
         [Required]

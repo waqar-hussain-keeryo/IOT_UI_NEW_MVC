@@ -14,7 +14,7 @@ namespace IOT_UI.Controllers
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
-                return Redirect("~/User/Login");
+                return Redirect("~/Login/Index");
             }
             return null;
         }

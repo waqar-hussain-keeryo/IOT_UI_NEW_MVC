@@ -1,0 +1,83 @@
+﻿@model IOT_UI.Models.UsersViewModel
+
+@{
+    ViewData["Title"] = "RegisterAdmin";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card" style="width: 100%; max-width: 400px;">
+        <div class="card-header">
+            <h4 class="text-center">IOT</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="RegisterAdmin">
+                <!-- Validation Summary -->
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group mb-3">
+                    <input asp-for="Email" class="form-control" placeholder="Enter Email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <input asp-for="FirstName" class="form-control" placeholder="Enter First Name" />
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <input asp-for="LastName" class="form-control" placeholder="Enter Last Name" />
+                    <span asp-validation-for="LastName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Enter Password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm Password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <div class="form-group text-center">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                </div>
+            </form>
+
+            <div class="text-center mt-3">
+                <p>Already have an account? <a asp-action="Index" asp-controller="Login">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert container -->
+<div id="alert-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div id="alert-box" class="alert alert-danger d-none" role="alert">
+        <span id="alert-message"></span>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var message = '@ViewBag.Message';
+            if (message) {
+                var alertBox = document.getElementById('alert-box');
+                var alertMessage = document.getElementById('alert-message');
+                alertMessage.textContent = message;
+                alertBox.classList.remove('d-none');
+
+                // Hide alert after 3 seconds
+                setTimeout(function () {
+                    alertBox.classList.add('d-none');
+                }, 3000);
+            }
+        });
+    </script>
+}
