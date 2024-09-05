@@ -1,0 +1,51 @@
+﻿@model IOT_UI.Models.SiteViewModel
+
+@{
+    ViewData["Title"] = "Edit Site";
+}
+
+<h4>Edit Site</h4>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="Site.SiteName" class="control-label"></label>
+                <input asp-for="Site.SiteName" class="form-control" />
+                <span asp-validation-for="Site.SiteName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Site.SiteLocation" class="control-label"></label>
+                <input asp-for="Site.SiteLocation" class="form-control" />
+                <span asp-validation-for="Site.SiteLocation" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Site.Latitude" class="control-label"></label>
+                <input asp-for="Site.Latitude" class="form-control" />
+                <span asp-validation-for="Site.Latitude" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Site.Longitude" class="control-label"></label>
+                <input asp-for="Site.Longitude" class="form-control" />
+                <span asp-validation-for="Site.Longitude" class="text-danger"></span>
+            </div>
+
+            <!-- Hidden fields for CustomerID and SiteID -->
+            <input type="hidden" asp-for="CustomerID" />
+            <input type="hidden" asp-for="Site.SiteID" />
+
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index" asp-route-customerId="@Model.CustomerID">Back to List</a>
+</div>

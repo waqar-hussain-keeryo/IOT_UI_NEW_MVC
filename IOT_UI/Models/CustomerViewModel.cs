@@ -37,6 +37,7 @@ namespace IOT_UI.Models
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public List<Device> Devices { get; set; } = new List<Device>();
+        public Guid CustomerID { get; set; }
     }
 
     public class Device
