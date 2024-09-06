@@ -2,13 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IOT_UI.Controllers
 {
-    public class SiteController : BaseController
+    public class DigitalServiceController : BaseController
     {
-        public SiteController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        public DigitalServiceController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
         private IActionResult RedirectToLoginIfNeeded()
         {
@@ -31,23 +30,23 @@ namespace IOT_UI.Controllers
             // Store customerId in session
             HttpContext.Session.SetString("CustomerId", customerId.ToString());
 
-            var sites = await GetSitesByCustomerId(customerId);
+            var digitalService = await GetDigitalServiceByCustomerId(customerId);
             ViewBag.CustomerId = customerId;
-            return View(sites);
+            return View(digitalService);
         }
 
         [HttpGet]
-        public async Task<List<Site>> GetSitesByCustomerId(Guid customerId)
+        public async Task<List<DigitalService>> GetDigitalServiceByCustomerId(Guid customerId)
         {
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetCustomerSites?customerId={customerId}";
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetAllDigitalService?customerId={customerId}";
 
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Site>>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<DigitalService>>>(data);
 
                 if (apiResponse != null && apiResponse.Success)
                 {
@@ -55,7 +54,7 @@ namespace IOT_UI.Controllers
                 }
             }
 
-            return new List<Site>();
+            return new List<DigitalService>();
         }
 
         public IActionResult Create()
@@ -69,10 +68,10 @@ namespace IOT_UI.Controllers
             var customerIdString = HttpContext.Session.GetString("CustomerId");
             if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
             {
-                return RedirectToAction("Index", "Site");
+                return RedirectToAction("Index", "DigitalService");
             }
 
-            var model = new Site
+            var model = new DigitalService
             {
                 CustomerID = customerId
             };
@@ -82,27 +81,26 @@ namespace IOT_UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Site site)
+        public async Task<IActionResult> Create(DigitalService service)
         {
             if (!ModelState.IsValid)
             {
-                return View(site);
+                return View(service);
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddSite?customerId={site.CustomerID}";
-            var content = new StringContent(JsonConvert.SerializeObject(site), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddDigitalService?customerId={service.CustomerID}";
+            var content = new StringContent(JsonConvert.SerializeObject(service), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index), new { customerId = site.CustomerID });
+                return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
             }
 
             ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
-            return View(site);
+            return View(service);
         }
-
 
         [HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid customerId)
@@ -119,13 +117,13 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteById/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetDigitalServiceById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Site>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<DigitalService>>(data);
 
                 if (apiResponse != null && apiResponse.Success)
                 {
@@ -139,28 +137,26 @@ namespace IOT_UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Site site, Guid customerId)
+        public async Task<IActionResult> Edit(DigitalService service, Guid customerId)
         {
             if (!ModelState.IsValid)
             {
-                return View(site);
+                return View(service);
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/UpdateSite";
-            var content = new StringContent(JsonConvert.SerializeObject(site), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/UpdateDigitalService";
+            var content = new StringContent(JsonConvert.SerializeObject(service), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, content);
 
             if (response.IsSuccessStatusCode)
             {
                 // Redirect to the Index action for the customer
-                return RedirectToAction("Index", "Site", new { customerId = customerId });
+                return RedirectToAction("Index", "DigitalService", new { customerId = customerId });
             }
 
             ModelState.AddModelError(string.Empty, "An error occurred while updating the site.");
-            return View(site);
+            return View(service);
         }
-
-
     }
 }

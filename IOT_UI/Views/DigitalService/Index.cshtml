@@ -1,0 +1,53 @@
+﻿@model IEnumerable<IOT_UI.Models.DigitalService>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var customerId = ViewBag.CustomerId;
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.ServiceStartDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ServiceEndDate)
+            </th>
+            <th>Active</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.ServiceStartDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ServiceEndDate)
+            </td>
+            <td>
+                    @if (item.IsActive)
+                    {
+                        <span>Yes</span>
+                    }
+                    else
+                    {
+                        <span>No</span>
+                    }
+            </td>
+            <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.DigitalServiceID, customerId = customerId }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.DigitalServiceID })
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

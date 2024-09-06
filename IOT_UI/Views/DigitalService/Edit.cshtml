@@ -1,0 +1,43 @@
+﻿@model IOT_UI.Models.DigitalService
+
+@{
+    ViewData["Title"] = "Edit Digital Service";
+    var customerId = ViewBag.CustomerId as Guid?;
+}
+
+<h4>DigitalService</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="DigitalServiceID" />
+            <input type="hidden" name="customerId" value="@customerId" />
+
+            <div class="form-group">
+                <label asp-for="ServiceStartDate" class="control-label"></label>
+                <input asp-for="ServiceStartDate" class="form-control" />
+                <span asp-validation-for="ServiceStartDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ServiceEndDate" class="control-label"></label>
+                <input asp-for="ServiceEndDate" class="form-control" />
+                <span asp-validation-for="ServiceEndDate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsActive" /> @Html.DisplayNameFor(model => model.IsActive)
+                </label>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index" asp-route-customerId="@customerId">Back to List</a>
+</div>
+

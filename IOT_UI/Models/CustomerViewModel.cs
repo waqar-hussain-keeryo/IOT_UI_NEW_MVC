@@ -37,7 +37,7 @@ namespace IOT_UI.Models
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public List<Device> Devices { get; set; } = new List<Device>();
-        public Guid CustomerID { get; set; }
+        public Guid? CustomerID { get; set; }
     }
 
     public class Device
@@ -46,6 +46,7 @@ namespace IOT_UI.Models
         public string DeviceName { get; set; }
         public string ProductType { get; set; }
         public double ThreSholdValue { get; set; }
+        public Guid? SiteID { get; set; }
     }
 
     public class DigitalService
@@ -55,5 +56,6 @@ namespace IOT_UI.Models
         public DateTime ServiceEndDate { get; set; }
         public bool IsActive { get; set; }
         public List<string> NotificationUsers { get; set; } = new List<string>();
+        public Guid? CustomerID { get; set; }
     }
 }
