@@ -46,17 +46,34 @@
                     @Html.DisplayFor(modelItem => item.Longitude)
                 </td>
                 <td>
-                    <!-- Hidden form with customerId -->
-                    <form method="get" asp-action="Edit" asp-controller="Site" style="display:inline;">
-                        <input type="hidden" name="customerId" value="@customerId" />
-                        <input type="hidden" name="id" value="@item.SiteID" />
-                        <button type="submit" class="btn btn-primary">Edit</button>
-                    </form>
-                    <form method="post" asp-action="Delete" asp-controller="Site" style="display:inline;">
-                        <input type="hidden" name="customerId" value="@customerId" />
-                        <input type="hidden" name="id" value="@item.SiteID" />
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
+                    <!-- Dropdown for actions -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <!-- Edit Site -->
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Edit", "Site", new { id = item.SiteID, customerId = customerId })">
+                                    Edit Site
+                                </a>
+                            </li>
+@*                             <!-- Delete Site -->
+                            <li>
+                                <form method="post" asp-action="Delete" asp-controller="Site" style="display:inline;">
+                                    <input type="hidden" name="customerId" value="@customerId" />
+                                    <input type="hidden" name="id" value="@item.SiteID" />
+                                    <button type="submit" class="dropdown-item">Delete Site</button>
+                                </form>
+                            </li> *@
+                            <!-- Add Device -->
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Index", "Device", new { siteId = item.SiteID })">
+                                    Add Device
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </td>
             </tr>
         }

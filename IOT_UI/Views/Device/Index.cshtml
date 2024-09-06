@@ -1,0 +1,54 @@
+﻿@model IEnumerable<IOT_UI.Models.Device>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.DeviceID)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DeviceName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductType)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ThreSholdValue)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.DeviceID)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DeviceName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ProductType)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ThreSholdValue)
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { id=item.DeviceID }) |
+                    @Html.ActionLink("Details", "Details", new { id = item.DeviceID }) |
+                    @Html.ActionLink("Delete", "Delete", new { id = item.DeviceID })
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
