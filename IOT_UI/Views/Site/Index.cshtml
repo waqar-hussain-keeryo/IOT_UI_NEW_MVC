@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var customerId = ViewBag.CustomerId;
 }
 
 <h1>Index</h1>
@@ -29,25 +30,35 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.SiteName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SiteLocation)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Latitude)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Longitude)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { id=item.SiteID }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.SiteID })
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SiteName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SiteLocation)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Latitude)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Longitude)
+                </td>
+                <td>
+                    <!-- Hidden form with customerId -->
+                    <form method="get" asp-action="Edit" asp-controller="Site" style="display:inline;">
+                        <input type="hidden" name="customerId" value="@customerId" />
+                        <input type="hidden" name="id" value="@item.SiteID" />
+                        <button type="submit" class="btn btn-primary">Edit</button>
+                    </form>
+                    <form method="post" asp-action="Delete" asp-controller="Site" style="display:inline;">
+                        <input type="hidden" name="customerId" value="@customerId" />
+                        <input type="hidden" name="id" value="@item.SiteID" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

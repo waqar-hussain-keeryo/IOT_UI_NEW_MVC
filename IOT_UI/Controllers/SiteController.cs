@@ -28,6 +28,9 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
+            // Store customerId in session
+            HttpContext.Session.SetString("CustomerId", customerId.ToString());
+
             var sites = await GetSitesByCustomerId(customerId);
             ViewBag.CustomerId = customerId;
             return View(sites);
@@ -55,7 +58,7 @@ namespace IOT_UI.Controllers
             return new List<Site>();
         }
 
-        public IActionResult Create(Guid customerId)
+        public IActionResult Create()
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -63,10 +66,15 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            var model = new SiteViewModel
+            var customerIdString = HttpContext.Session.GetString("CustomerId");
+            if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
             {
-                CustomerID = customerId,
-                Site = new Site()
+                return RedirectToAction("Index", "Home");
+            }
+
+            var model = new Site
+            {
+                CustomerID = customerId
             };
 
             return View(model);
@@ -75,25 +83,25 @@ namespace IOT_UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(SiteViewModel viewModel)
+        public async Task<IActionResult> Create(Site site)
         {
             if (!ModelState.IsValid)
             {
-                return View(viewModel);
+                return View(site);
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddSite?customerId={viewModel.CustomerID}";
-            var content = new StringContent(JsonConvert.SerializeObject(viewModel.Site), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddSite?customerId={site.CustomerID}";
+            var content = new StringContent(JsonConvert.SerializeObject(site), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index), new { customerId = viewModel.CustomerID });
+                return RedirectToAction(nameof(Index), new { customerId = site.CustomerID });
             }
 
             ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
-            return View(viewModel);
+            return View(site);
         }
 
 
@@ -106,8 +114,13 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
+            if (id == null)
+            {
+                return NotFound();
+            }
+
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteById?siteId={id}";
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -117,43 +130,38 @@ namespace IOT_UI.Controllers
 
                 if (apiResponse != null && apiResponse.Success)
                 {
-                    var model = new SiteViewModel
-                    {
-                        CustomerID = customerId,
-                        Site = apiResponse.Data
-                    };
-
-                    return View(model);
+                    ViewBag.CustomerId = customerId;
+                    return View(apiResponse.Data);
                 }
             }
 
             return NotFound();
         }
 
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(SiteViewModel viewModel)
+        public async Task<IActionResult> Edit(Site site, Guid customerId)
         {
             if (!ModelState.IsValid)
             {
-                return View(viewModel);
+                return View(site);
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/UpdateSite?siteId={viewModel.Site.SiteID}";
-            var content = new StringContent(JsonConvert.SerializeObject(viewModel.Site), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/UpdateSite";
+            var content = new StringContent(JsonConvert.SerializeObject(site), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, content);
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index), new { customerId = viewModel.CustomerID });
+                // Redirect to the Index action for the customer
+                return RedirectToAction("Index", "Site", new { customerId = customerId });
             }
 
             ModelState.AddModelError(string.Empty, "An error occurred while updating the site.");
-            return View(viewModel);
+            return View(site);
         }
+
 
     }
 }

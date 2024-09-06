@@ -7,7 +7,7 @@
 <h1>Customer List</h1>
 
 <p>
-    <a asp-action="Create">Create New Customer</a>
+    <a asp-action="Create">Create Customer</a>
 </p>
 
 <table class="table">
@@ -74,7 +74,12 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li>
-                                <a class="dropdown-item" href="@Url.Action("Create", "Site", new { customerId = item.CustomerID })">
+                                <a class="dropdown-item" href="@Url.Action("Index", "User", new { customerId = item.CustomerID })">
+                                    Add User
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Index", "Site", new { customerId = item.CustomerID })">
                                     Add Site
                                 </a>
                             </li>

@@ -1,4 +1,4 @@
-﻿@model IOT_UI.Models.SiteViewModel
+﻿@model IOT_UI.Models.Site
 
 @{
     ViewData["Title"] = "Create Site";
@@ -10,33 +10,32 @@
     <div class="col-md-6">
         <form asp-action="Create" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="form-group">
-                <label asp-for="Site.SiteName" class="control-label"></label>
-                <input asp-for="Site.SiteName" class="form-control" />
-                <span asp-validation-for="Site.SiteName" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Site.SiteLocation" class="control-label"></label>
-                <input asp-for="Site.SiteLocation" class="form-control" />
-                <span asp-validation-for="Site.SiteLocation" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Site.Latitude" class="control-label"></label>
-                <input asp-for="Site.Latitude" class="form-control" />
-                <span asp-validation-for="Site.Latitude" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Site.Longitude" class="control-label"></label>
-                <input asp-for="Site.Longitude" class="form-control" />
-                <span asp-validation-for="Site.Longitude" class="text-danger"></span>
-            </div>
-
             <!-- Hidden field for CustomerID -->
             <input type="hidden" asp-for="CustomerID" />
+
+            <div class="form-group">
+                <label asp-for="SiteName" class="control-label"></label>
+                <input asp-for="SiteName" class="form-control" />
+                <span asp-validation-for="SiteName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="SiteLocation" class="control-label"></label>
+                <input asp-for="SiteLocation" class="form-control" />
+                <span asp-validation-for="SiteLocation" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Latitude" class="control-label"></label>
+                <input asp-for="Latitude" class="form-control" />
+                <span asp-validation-for="Latitude" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Longitude" class="control-label"></label>
+                <input asp-for="Longitude" class="form-control" />
+                <span asp-validation-for="Longitude" class="text-danger"></span>
+            </div>
 
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
