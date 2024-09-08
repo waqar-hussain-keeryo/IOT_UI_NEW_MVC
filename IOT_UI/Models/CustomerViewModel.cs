@@ -38,6 +38,7 @@ namespace IOT_UI.Models
         public double Longitude { get; set; }
         public List<Device> Devices { get; set; } = new List<Device>();
         public Guid? CustomerID { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class Device
@@ -47,6 +48,7 @@ namespace IOT_UI.Models
         public string ProductType { get; set; }
         public double ThreSholdValue { get; set; }
         public Guid? SiteID { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class DigitalService
@@ -57,5 +59,6 @@ namespace IOT_UI.Models
         public bool IsActive { get; set; }
         public List<string> NotificationUsers { get; set; } = new List<string>();
         public Guid? CustomerID { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

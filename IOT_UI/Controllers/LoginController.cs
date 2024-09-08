@@ -65,7 +65,7 @@ namespace IOT_UI.Controllers
                 else
                 {
                     ViewBag.Message = "Login failed. Please try again.";
-                    return View("Login");
+                    return View("Index");
                 }
             }
             catch

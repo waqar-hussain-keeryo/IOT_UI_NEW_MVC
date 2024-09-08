@@ -158,5 +158,59 @@ namespace IOT_UI.Controllers
             ModelState.AddModelError(string.Empty, "An error occurred while updating the site.");
             return View(service);
         }
+
+        public async Task<IActionResult> Delete(Guid? id, Guid customerId)
+        {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetDigitalServiceById/{id}";
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string data = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<DigitalService>>(data);
+
+                if (apiResponse != null && apiResponse.Success)
+                {
+                    ViewBag.CustomerId = customerId;
+                    return View(apiResponse.Data);
+                }
+            }
+
+            return NotFound();
+        }
+
+        [HttpPost, ActionName("DeleteConfirmed")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(Guid digitalServiceId, Guid customerId)
+        {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/DeleteDigitalService/{digitalServiceId}";
+            HttpResponseMessage response = await _httpClient.DeleteAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return RedirectToAction("Index", new { customerId = customerId });
+            }
+
+            return NotFound();
+        }
     }
 }

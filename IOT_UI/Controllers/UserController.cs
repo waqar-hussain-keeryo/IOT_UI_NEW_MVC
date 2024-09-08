@@ -1,6 +1,7 @@
 ﻿using IOT_UI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Security.Policy;
 using System.Text;
 
 namespace IOT_UI.Controllers
@@ -19,7 +20,7 @@ namespace IOT_UI.Controllers
             return null;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -27,15 +28,19 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            var users = await GetAllUsers();
+            // Store customerId in session
+            HttpContext.Session.SetString("CustomerId", customerId.ToString());
+
+            var users = await GetAllUsersByCustomer(customerId);
+            ViewBag.CustomerId = customerId;
             return View(users);
         }
 
         [HttpGet]
-        public async Task<List<UsersViewModel>> GetAllUsers()
+        public async Task<List<UsersViewModel>> GetAllUsersByCustomer(Guid customerId)
         {
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/GetAllUsers";
+            var url = $"{_configuration["ApiBaseUrl"]}User/GetAllUsersByCustomer/{customerId}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -61,11 +66,17 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            var userEmail = HttpContext.Session.GetString("UserEmail");
-            var model = new UsersViewModel
+            var customerIdString = HttpContext.Session.GetString("CustomerId");
+            if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
             {
-                CustomerEmail = userEmail
+                return RedirectToAction("Index", "User");
+            }
+
+            var model = new UsersViewModel()
+            {
+                CustomerId = customerId
             };
+
             return View(model);
         }
 
@@ -98,13 +109,11 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { customerId = user.CustomerId });
             }
-            else
-            {
-                ViewBag.Message = "Error creating user. Please try again.";
-                return View(user);
-            }
+
+            ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
+            return View(user);
         }
 
         public async Task<IActionResult> Edit(Guid id)

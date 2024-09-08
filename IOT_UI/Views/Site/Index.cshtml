@@ -58,14 +58,12 @@
                                     Edit Site
                                 </a>
                             </li>
-@*                             <!-- Delete Site -->
+                            <!-- Delete Site -->
                             <li>
-                                <form method="post" asp-action="Delete" asp-controller="Site" style="display:inline;">
-                                    <input type="hidden" name="customerId" value="@customerId" />
-                                    <input type="hidden" name="id" value="@item.SiteID" />
-                                    <button type="submit" class="dropdown-item">Delete Site</button>
-                                </form>
-                            </li> *@
+                                <a class="dropdown-item" href="@Url.Action("Delete", "Site", new { id = item.SiteID, customerId = customerId })">
+                                    Delete Site
+                                </a>
+                            </li>
                             <!-- Add Device -->
                             <li>
                                 <a class="dropdown-item" href="@Url.Action("Index", "Device", new { siteId = item.SiteID })">

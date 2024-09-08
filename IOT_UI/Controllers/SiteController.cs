@@ -84,6 +84,12 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Site site)
         {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(site);
@@ -153,7 +159,6 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Redirect to the Index action for the customer
                 return RedirectToAction("Index", "Site", new { customerId = customerId });
             }
 
@@ -161,6 +166,59 @@ namespace IOT_UI.Controllers
             return View(site);
         }
 
+        public async Task<IActionResult> Delete(Guid? id, Guid customerId)
+        {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteById/{id}";
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string data = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Site>>(data);
+
+                if (apiResponse != null && apiResponse.Success)
+                {
+                    ViewBag.CustomerId = customerId;
+                    return View(apiResponse.Data);
+                }
+            }
+
+            return NotFound();
+        }
+
+        [HttpPost, ActionName("DeleteConfirmed")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(Guid siteId, Guid customerId)
+        {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/DeleteSite/{siteId}";
+            HttpResponseMessage response = await _httpClient.DeleteAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return RedirectToAction("Index", new { customerId = customerId });
+            }
+
+            return NotFound();
+        }
 
     }
 }

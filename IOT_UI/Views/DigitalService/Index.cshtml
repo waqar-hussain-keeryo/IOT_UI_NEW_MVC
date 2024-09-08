@@ -45,8 +45,22 @@
             </td>
             <td>
                     @Html.ActionLink("Edit", "Edit", new { id = item.DigitalServiceID, customerId = customerId }) |
-                @Html.ActionLink("Delete", "Delete", new { id = item.DigitalServiceID })
+                    @Html.ActionLink("Delete", "Delete", new { id = item.DigitalServiceID, customerId = customerId })
             </td>
+                <td>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            Add
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Index", "NotificationUser", new { digitalServiceId = item.DigitalServiceID })">
+                                    Add Notification User
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </td>
         </tr>
 }
     </tbody>

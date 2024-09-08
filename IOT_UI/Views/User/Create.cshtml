@@ -6,9 +6,7 @@
     <div class="col-md-4">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <!-- Hidden fields to pass userEmail -->
-            <input type="hidden" name="CustomerEmail" value="@Model.CustomerEmail" />
+            <input type="hidden" name="CustomerId" value="@Model.CustomerId" />
 
             <div class="form-group">
                 <label asp-for="Email" class="control-label"></label>

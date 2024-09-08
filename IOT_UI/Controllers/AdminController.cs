@@ -23,6 +23,12 @@ namespace IOT_UI.Controllers
         
         public async Task<IActionResult> Index()
         {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             var users = await GetAllAdmin();
             return View(users);
         }
@@ -77,7 +83,7 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index));
+                return Redirect("~/Login/Index");
             }
             else
             {
@@ -89,6 +95,12 @@ namespace IOT_UI.Controllers
 
         public async Task<IActionResult> Edit(Guid id)
         {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -116,6 +128,12 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(UsersViewModel user)
         {
+            var redirectResult = RedirectToLoginIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}User/UpdateUser";
             var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
