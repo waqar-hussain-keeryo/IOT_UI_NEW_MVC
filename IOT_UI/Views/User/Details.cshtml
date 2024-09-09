@@ -1,5 +1,9 @@
 ﻿@model IOT_UI.Models.UsersViewModel
 
+@{
+    var customerId = ViewBag.CustomerId as Guid?;
+}
+
 <div>
     <h4>User Details</h4>
     <hr />
@@ -38,6 +42,6 @@
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.UserID }) |
-    <a asp-action="Index">Back to List</a>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.UserID, customerId = customerId }) |
+    <a asp-action="Index" asp-route-customerId="@customerId">Back to List</a>
 </div>

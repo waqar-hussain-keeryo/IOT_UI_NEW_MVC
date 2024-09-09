@@ -127,7 +127,7 @@ namespace IOT_UI.Controllers
         }
 
         // Show the user edit form
-        public async Task<IActionResult> Edit(Guid id)
+        public async Task<IActionResult> Edit(Guid? id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -148,11 +148,12 @@ namespace IOT_UI.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UsersViewModel>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<EditUserViewModel>>(data);
 
                 // Return the user data if successful
                 if (apiResponse?.Success == true)
                 {
+                    ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
                 }
             }
@@ -164,7 +165,7 @@ namespace IOT_UI.Controllers
         // Handle user updates
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(UsersViewModel user)
+        public async Task<IActionResult> Edit(EditUserViewModel user, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -185,7 +186,7 @@ namespace IOT_UI.Controllers
             // Redirect to Index if update is successful
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index), new { customerId = user.CustomerId });
+                return RedirectToAction("Index", new { customerId = customerId });
             }
 
             // Add error to ModelState if update failed
@@ -194,7 +195,7 @@ namespace IOT_UI.Controllers
         }
 
         // Show the user delete confirmation view
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -220,6 +221,7 @@ namespace IOT_UI.Controllers
                 // Return the user data if successful
                 if (apiResponse?.Success == true)
                 {
+                    ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
                 }
             }
@@ -231,7 +233,7 @@ namespace IOT_UI.Controllers
         // Handle the deletion of a user
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
+        public async Task<IActionResult> DeleteConfirmed(Guid id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -246,7 +248,7 @@ namespace IOT_UI.Controllers
             // Redirect to Index if deletion is successful
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", new { customerId = customerId });
             }
 
             // Return NotFound if deletion failed
@@ -254,7 +256,7 @@ namespace IOT_UI.Controllers
         }
 
         // Show detailed information about a user
-        public async Task<IActionResult> Details(Guid? id)
+        public async Task<IActionResult> Details(Guid? id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -280,6 +282,7 @@ namespace IOT_UI.Controllers
                 // Return user details if successful
                 if (apiResponse?.Success == true)
                 {
+                    ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using IOT_UI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Reflection;
 using System.Text;
 
 namespace IOT_UI.Controllers
@@ -117,7 +118,7 @@ namespace IOT_UI.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UsersViewModel>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<EditUserViewModel>>(data);
                 return apiResponse?.Success == true ? View(apiResponse.Data) : NotFound();
             }
 
@@ -127,7 +128,7 @@ namespace IOT_UI.Controllers
         // Action to handle user updates
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(UsersViewModel user)
+        public async Task<IActionResult> Edit(EditUserViewModel user)
         {
             // Check if user needs to be redirected to login
             var redirectResult = RedirectToLoginIfNeeded();
@@ -135,7 +136,7 @@ namespace IOT_UI.Controllers
             {
                 return redirectResult;
             }
-
+            
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/UpdateAdmin";
             var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");

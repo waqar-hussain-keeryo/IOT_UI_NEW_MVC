@@ -1,12 +1,17 @@
-﻿@model IOT_UI.Models.UsersViewModel
+﻿@model IOT_UI.Models.EditUserViewModel
+
+@{
+    var customerId = ViewBag.CustomerId as Guid?;
+}
 
 <h4>Update User</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Edit">
+        <form asp-action="Edit" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="UserID" />
+            <input type="hidden" name="customerId" value="@customerId" />
 
             <div class="form-group">
                 <label asp-for="Email" class="control-label"></label>
@@ -23,17 +28,8 @@
                 <input asp-for="LastName" class="form-control" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Password" class="control-label"></label>
-                <input asp-for="Password" class="form-control" type="password" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ConfirmPassword" class="control-label"></label>
-                <input asp-for="ConfirmPassword" class="form-control" type="password" />
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-            </div>
-            <div class="form-group">
+
+            <div class="form-group mt-3">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>
@@ -41,6 +37,6 @@
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index" asp-route-customerId="@customerId">Back to List</a>
 </div>
 

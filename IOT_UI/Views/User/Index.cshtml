@@ -1,5 +1,9 @@
 ﻿@model IEnumerable<IOT_UI.Models.UsersViewModel>
 
+@{
+    var customerId = ViewBag.CustomerId;
+}
+
 <h1>User List</h1>
 
 <p>
@@ -16,9 +20,6 @@
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.LastName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Password)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.EmailVerified)
@@ -39,9 +40,6 @@
                 @Html.DisplayFor(modelItem => item.LastName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Password)
-            </td>
-            <td>
                 @if (item.EmailVerified)
                 {
                     <span>Yes</span>
@@ -52,9 +50,9 @@
                 }
             </td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { id = item.UserID }) |
-                @Html.ActionLink("Details", "Details", new { id = item.UserID }) |
-                @Html.ActionLink("Delete", "Delete", new { id = item.UserID })
+                    @Html.ActionLink("Edit", "Edit", new { id = item.UserID, customerId = customerId }) |
+                    @Html.ActionLink("Details", "Details", new { id = item.UserID, customerId = customerId }) |
+                    @Html.ActionLink("Delete", "Delete", new { id = item.UserID, customerId = customerId })
             </td>
         </tr>
 }
