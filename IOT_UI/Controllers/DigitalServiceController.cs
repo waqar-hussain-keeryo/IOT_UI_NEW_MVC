@@ -70,32 +70,53 @@ namespace IOT_UI.Controllers
             return View(model);
         }
 
-        // Handle POST request to create a new digital service
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DigitalService service)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(service);
-            }
+		// Handle POST request to create a new digital service
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> Create(DigitalService service)
+		{
+			if (!ModelState.IsValid)
+			{
+				return View(service);
+			}
 
-            SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddDigitalService?customerId={service.CustomerID}";
-            var content = new StringContent(JsonConvert.SerializeObject(service), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _httpClient.PostAsync(url, content);
+			var customerIdString = HttpContext.Session.GetString("CustomerId");
+			if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
+			{
+				return RedirectToAction(nameof(Index));
+			}
 
-            if (response.IsSuccessStatusCode)
-            {
-                return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
-            }
+			// Retrieve existing services for the customer
+			var existingServices = await GetDigitalServicesByCustomerId(customerId);
 
-            ModelState.AddModelError(string.Empty, "An error occurred while creating the digital service.");
-            return View(service);
-        }
+			// Check for overlapping dates
+			foreach (var existingService in existingServices)
+			{
+				if (DatesOverlap(service.ServiceStartDate, service.ServiceEndDate, existingService.ServiceStartDate, existingService.ServiceEndDate))
+				{
+					ModelState.AddModelError(string.Empty, "The selected dates overlap with an existing digital service. Please choose non-overlapping dates.");
+					return View(service);
+				}
+			}
 
-        // Display form to edit an existing digital service
-        [HttpGet]
+			// If no overlap, proceed to call API to create the service
+			SetAuthorizationHeader();
+			var url = $"{_configuration["ApiBaseUrl"]}Customer/AddDigitalService?customerId={service.CustomerID}";
+			var content = new StringContent(JsonConvert.SerializeObject(service), Encoding.UTF8, "application/json");
+			HttpResponseMessage response = await _httpClient.PostAsync(url, content);
+
+			if (response.IsSuccessStatusCode)
+			{
+				return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
+			}
+
+			ModelState.AddModelError(string.Empty, "An error occurred while creating the digital service.");
+			return View(service);
+		}
+
+
+		// Display form to edit an existing digital service
+		[HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -189,5 +210,11 @@ namespace IOT_UI.Controllers
 
             return NotFound();
         }
-    }
+
+		private bool DatesOverlap(DateTime newStart, DateTime newEnd, DateTime existingStart, DateTime existingEnd)
+		{
+			return newStart <= existingEnd && newEnd >= existingStart;
+		}
+
+	}
 }
