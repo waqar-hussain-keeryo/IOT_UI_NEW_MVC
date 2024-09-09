@@ -4,7 +4,6 @@ namespace IOT_UI.Models
 {
     public class UsersViewModel
     {
-        [Required]
         public Guid UserID { get; set; }
 
         [Required(ErrorMessage = "Email is required.")]
@@ -19,8 +18,6 @@ namespace IOT_UI.Models
         [StringLength(50, ErrorMessage = "Last name cannot be longer than 50 characters.")]
         public string LastName { get; set; }
 
-        public Guid? CustomerId { get; set; }
-
         [Required(ErrorMessage = "Password is required.")]
         [MinLength(6, ErrorMessage = "Password must be at least 6 characters long.")]
         public string Password { get; set; }
@@ -29,6 +26,7 @@ namespace IOT_UI.Models
         [Compare("Password", ErrorMessage = "Password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
 
+        public Guid? CustomerId { get; set; }
         public bool EmailVerified { get; set; } = false;
         public bool IsDeleted { get; set; } = false;
     }

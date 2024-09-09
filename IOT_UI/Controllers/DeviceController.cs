@@ -9,6 +9,7 @@ namespace IOT_UI.Controllers
     {
         public DeviceController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
+        // Redirect to login page if JWT token is missing
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -19,24 +20,24 @@ namespace IOT_UI.Controllers
             return null;
         }
 
+        // Display devices for a specific site
         public async Task<IActionResult> Index(Guid siteId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
-            // Store customerId in session
+            // Store siteId in session
             HttpContext.Session.SetString("SiteId", siteId.ToString());
 
-            var device = await GetDeviceBySiteId(siteId);
+            var devices = await GetDevicesBySiteId(siteId);
+            
             ViewBag.SiteId = siteId;
-            return View(device);
+            return View(devices);
         }
 
+        // Retrieve devices for a site from API
         [HttpGet]
-        public async Task<List<Device>> GetDeviceBySiteId(Guid siteId)
+        private async Task<List<Device>> GetDevicesBySiteId(Guid siteId)
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteDevices?siteId={siteId}";
@@ -45,40 +46,51 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Device>>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Device>>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
                 }
             }
-
             return new List<Device>();
         }
 
-        public IActionResult Create()
+        [HttpGet]
+        private async Task<List<ProductTypeViewModel>> GetProductType()
+        {
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}ProductType/GetAllProductTypes";
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<ProductTypeViewModel>>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
+                {
+                    return apiResponse.Data;
+                }
+            }
+            return new List<ProductTypeViewModel>();
+        }
+
+        // Display form to create a new device
+        public async Task<IActionResult> Create()
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
             var siteIdString = HttpContext.Session.GetString("SiteId");
             if (string.IsNullOrEmpty(siteIdString) || !Guid.TryParse(siteIdString, out Guid siteId))
             {
-                return RedirectToAction("Index", "Device");
+                return RedirectToAction(nameof(Index));
             }
 
-            var model = new Device
-            {
-                SiteID = siteId
-            };
-
+            var productType = await GetProductType();
+            var model = new Device { SiteID = siteId, ProductTypeList = productType };
             return View(model);
         }
 
+        // Handle POST request to create a new device
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Device device)
@@ -98,24 +110,18 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { siteId = device.SiteID });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
+            ModelState.AddModelError(string.Empty, "An error occurred while creating the device.");
             return View(device);
         }
 
-
+        // Display form to edit an existing device
         [HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid siteId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (!id.HasValue) return NotFound();
 
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetDeviceById/{id}";
@@ -123,10 +129,8 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Device>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Device>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
                 {
                     ViewBag.SiteId = siteId;
                     return View(apiResponse.Data);
@@ -136,6 +140,7 @@ namespace IOT_UI.Controllers
             return NotFound();
         }
 
+        // Handle POST request to update an existing device
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Device device)
@@ -152,11 +157,10 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Redirect to the Index action for the customer
-                return RedirectToAction("Index", "Device", new { siteId = device.SiteID });
+                return RedirectToAction(nameof(Index), new { siteId = device.SiteID });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while updating the site.");
+            ModelState.AddModelError(string.Empty, "An error occurred while updating the device.");
             return View(device);
         }
     }

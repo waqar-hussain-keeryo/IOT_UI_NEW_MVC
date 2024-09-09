@@ -1,32 +1,20 @@
 ﻿@model IOT_UI.Models.DigitalService
 
-@{
-    var customerId = ViewBag.CustomerId as Guid?;
-}
-
 <h4>DigitalService</h4>
 <hr />
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="DigitalServiceID" />
-            <input type="hidden" name="customerId" value="@customerId" />
+            <input type="hidden" asp-for="CustomerID" />
 
             <div class="form-group">
-                <label asp-for="DigitalServiceID" class="control-label"></label>
-                <input asp-for="DigitalServiceID" class="form-control" />
-                <span asp-validation-for="DigitalServiceID" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="NotificationUsers" class="control-label"></label>
-                <select asp-for="NotificationUsers" class="form-control" /></<select>
-                    @{
-                        foreach (var user in Model.NotificationUsers)
-                        {
-                            <option>user</option>
-                        }
+                <label asp-for="NotificationUsers" class="control-label">Select Users</label>
+                <select asp-for="NotificationUsers" class="form-control" multiple>
+                    @foreach (var user in Model.Users)
+                    {
+                        <option value="@user.UserID">@user.Email</option>
                     }
                 </select>
                 <span asp-validation-for="NotificationUsers" class="text-danger"></span>
@@ -42,4 +30,3 @@
 <div>
     <a asp-action="Index">Back to List</a>
 </div>
-

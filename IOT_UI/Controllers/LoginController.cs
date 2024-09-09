@@ -9,42 +9,49 @@ namespace IOT_UI.Controllers
     {
         public LoginController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
-        private IActionResult RedirectToLoginIfNeeded()
+        // Redirect to dashboard if the user is already logged in
+        private IActionResult RedirectToDashboardIfLoggedIn()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
-            if (string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(token))
             {
-                return Redirect("Index");
+                return RedirectToAction("Index", "Dashboard");
             }
             return null;
         }
 
-        public ActionResult Index()
+        // Display login page if user is not logged in, otherwise redirect to dashboard
+        public IActionResult Index()
         {
-            var token = HttpContext.Session.GetString("JWTtoken");
-            if (string.IsNullOrEmpty(token))
-            {
-                return View();
-            }
-            return RedirectToAction("Index", "Dashboard");
+            var redirectResult = RedirectToDashboardIfLoggedIn();
+            if (redirectResult != null) return redirectResult;
+
+            return View();
         }
 
+        // Handle user login
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> LoginUser(UsersViewModel user)
         {
             try
             {
-                StringContent content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
+                // Prepare HTTP content for the request
+                var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
                 var url = $"{_configuration["ApiBaseUrl"]}User/Login";
-                HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
+                // Send login request
+                var response = await _httpClient.PostAsync(url, content);
+
+                // Check if the response is successful
                 if (response.IsSuccessStatusCode)
                 {
                     var responseData = await response.Content.ReadAsStringAsync();
                     var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UserLoginResponse>>(responseData);
 
-                    if (apiResponse != null && apiResponse.Success)
+                    if (apiResponse?.Success == true)
                     {
+                        // Store token and user details in session
                         var token = apiResponse.Data.Token;
                         var userEmail = apiResponse.Data.Email;
                         var roleName = apiResponse.Data.Roles;
@@ -56,25 +63,24 @@ namespace IOT_UI.Controllers
                         ViewBag.Message = "Login successful!";
                         return RedirectToAction("Index", "Dashboard");
                     }
-                    else
-                    {
-                        ViewBag.Message = "Incorrect Email or Password";
-                        return View("Index");
-                    }
+
+                    ViewBag.Message = "Incorrect Email or Password.";
                 }
                 else
                 {
                     ViewBag.Message = "Login failed. Please try again.";
-                    return View("Index");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                ViewBag.Message = "An error occurred. Please try again.";
-                return View("Index");
+                // Log exception details (consider using a logging framework)
+                ViewBag.Message = $"An error occurred: {ex.Message}. Please try again.";
             }
+
+            return View("Index");
         }
 
+        // Log off the user and clear session
         public IActionResult LogOff()
         {
             HttpContext.Session.Clear();

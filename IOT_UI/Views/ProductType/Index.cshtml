@@ -1,0 +1,53 @@
+﻿@model IEnumerable<IOT_UI.Models.ProductTypeViewModel>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductTypeName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.MinVal)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.MaxVal)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.UOM)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.ProductTypeName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.MinVal)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.MaxVal)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UOM)
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { id=item.ProductTypeID }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.ProductTypeID })
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

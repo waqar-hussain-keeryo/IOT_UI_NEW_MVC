@@ -9,6 +9,7 @@ namespace IOT_UI.Controllers
     {
         public DigitalServiceController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
+        // Redirect to login page if JWT token is missing
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -19,24 +20,23 @@ namespace IOT_UI.Controllers
             return null;
         }
 
+        // Display digital services for a specific customer
         public async Task<IActionResult> Index(Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
             // Store customerId in session
             HttpContext.Session.SetString("CustomerId", customerId.ToString());
 
-            var digitalService = await GetDigitalServiceByCustomerId(customerId);
+            var digitalServices = await GetDigitalServicesByCustomerId(customerId);
             ViewBag.CustomerId = customerId;
-            return View(digitalService);
+            return View(digitalServices);
         }
 
+        // Retrieve digital services for a customer from API
         [HttpGet]
-        public async Task<List<DigitalService>> GetDigitalServiceByCustomerId(Guid customerId)
+        private async Task<List<DigitalService>> GetDigitalServicesByCustomerId(Guid customerId)
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetAllDigitalService?customerId={customerId}";
@@ -45,40 +45,32 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<DigitalService>>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<DigitalService>>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
                 }
             }
-
-            return new List<DigitalService>();
+            return new List<DigitalService>(); // Return empty list if an error occurs
         }
 
+        // Display form to create a new digital service
         public IActionResult Create()
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
             var customerIdString = HttpContext.Session.GetString("CustomerId");
             if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
             {
-                return RedirectToAction("Index", "DigitalService");
+                return RedirectToAction(nameof(Index));
             }
 
-            var model = new DigitalService
-            {
-                CustomerID = customerId
-            };
-
+            var model = new DigitalService { CustomerID = customerId };
             return View(model);
         }
 
+        // Handle POST request to create a new digital service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(DigitalService service)
@@ -98,23 +90,18 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
+            ModelState.AddModelError(string.Empty, "An error occurred while creating the digital service.");
             return View(service);
         }
 
+        // Display form to edit an existing digital service
         [HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetDigitalServiceById/{id}";
@@ -122,10 +109,8 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<DigitalService>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<DigitalService>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
                 {
                     ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
@@ -135,6 +120,7 @@ namespace IOT_UI.Controllers
             return NotFound();
         }
 
+        // Handle POST request to update an existing digital service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(DigitalService service, Guid customerId)
@@ -151,26 +137,21 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Redirect to the Index action for the customer
-                return RedirectToAction("Index", "DigitalService", new { customerId = customerId });
+                return RedirectToAction(nameof(Index), new { customerId = customerId });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while updating the site.");
+            ModelState.AddModelError(string.Empty, "An error occurred while updating the digital service.");
             return View(service);
         }
 
+        // Display confirmation page for deleting a digital service
+        [HttpGet]
         public async Task<IActionResult> Delete(Guid? id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetDigitalServiceById/{id}";
@@ -178,10 +159,8 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<DigitalService>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<DigitalService>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
                 {
                     ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
@@ -191,15 +170,13 @@ namespace IOT_UI.Controllers
             return NotFound();
         }
 
+        // Handle POST request to confirm deletion of a digital service
         [HttpPost, ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid digitalServiceId, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
+            if (redirectResult != null) return redirectResult;
 
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/DeleteDigitalService/{digitalServiceId}";
@@ -207,7 +184,7 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction("Index", new { customerId = customerId });
+                return RedirectToAction(nameof(Index), new { customerId = customerId });
             }
 
             return NotFound();

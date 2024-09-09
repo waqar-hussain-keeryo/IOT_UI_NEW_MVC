@@ -1,8 +1,9 @@
-﻿@model IEnumerable<IOT_UI.Models.DigitalService>
+﻿@model IEnumerable<IOT_UI.Models.UsersViewModel>
 
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var digitalServiceId = ViewBag.DigitalServiceId;
 }
 
 <h1>Index</h1>
@@ -13,12 +14,7 @@
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.DigitalServiceID)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.NotificationUsers)
-            </th>
+            <th> Notification User </th>
             <th></th>
         </tr>
     </thead>
@@ -26,14 +22,11 @@
 @foreach (var item in Model) {
         <tr>
             <td>
-                @Html.DisplayFor(modelItem => item.DigitalServiceID)
+                @Html.DisplayFor(modelItem => item.Email)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.NotificationUsers)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { digitalServiceId=item.DigitalServiceID }) |
-                @Html.ActionLink("Delete", "Delete", new { digitalServiceId = item.DigitalServiceID })
+                    @Html.ActionLink("Edit", "Edit", new { id = digitalServiceId }) |
+                    @Html.ActionLink("Delete", "Delete", new { id = digitalServiceId, userId = item.UserID })
             </td>
         </tr>
 }

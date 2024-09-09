@@ -43,22 +43,25 @@ namespace IOT_UI.Models
 
     public class Device
     {
-        public Guid DeviceID { get; set; } = Guid.NewGuid();
+        public Guid DeviceID { get; set; }
         public string DeviceName { get; set; }
         public string ProductType { get; set; }
         public double ThreSholdValue { get; set; }
         public Guid? SiteID { get; set; }
         public bool IsDeleted { get; set; }
+        public List<ProductTypeViewModel>? ProductTypeList { get; set; }
+
     }
 
     public class DigitalService
     {
-        public Guid DigitalServiceID { get; set; } = Guid.NewGuid();
+        public Guid DigitalServiceID { get; set; }
         public DateTime ServiceStartDate { get; set; }
         public DateTime ServiceEndDate { get; set; }
         public bool IsActive { get; set; }
         public List<string> NotificationUsers { get; set; } = new List<string>();
         public Guid? CustomerID { get; set; }
         public bool IsDeleted { get; set; }
+        public List<UsersViewModel>? Users { get; set; }
     }
 }

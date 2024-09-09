@@ -1,7 +1,6 @@
 ﻿using IOT_UI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Security.Policy;
 using System.Text;
 
 namespace IOT_UI.Controllers
@@ -29,6 +28,7 @@ namespace IOT_UI.Controllers
             }
 
             HttpContext.Session.SetString("DigitalServiceId", digitalServiceId.ToString());
+
             var customerIdString = HttpContext.Session.GetString("CustomerId");
             if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
             {
@@ -36,8 +36,7 @@ namespace IOT_UI.Controllers
             }
 
             var digitalService = await GetNotificationUsers(digitalServiceId);
-            var allUsers = await GetAllUsersByCustomer(customerId);
-            ViewBag.CustomerId = customerId;
+            ViewBag.DigitalServiceId = digitalServiceId;
             return View(digitalService);
         }
 
@@ -46,14 +45,14 @@ namespace IOT_UI.Controllers
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}User/GetAllUsersByCustomer/{customerId}";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
 
+            var response = await _httpClient.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
+                var data = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<UsersViewModel>>>(data);
 
-                if (apiResponse != null && apiResponse.Success)
+                if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
                 }
@@ -63,28 +62,27 @@ namespace IOT_UI.Controllers
         }
 
         [HttpGet]
-        public async Task<List<DigitalService>> GetNotificationUsers(Guid digitalServiceId)
+        public async Task<List<UsersViewModel>> GetNotificationUsers(Guid digitalServiceId)
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetNotificationUserById/{digitalServiceId}";
 
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
-
+            var response = await _httpClient.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<DigitalService>>>(data);
+                var data = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<UsersViewModel>>>(data);
 
-                if (apiResponse != null && apiResponse.Success)
+                if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
                 }
             }
 
-            return new List<DigitalService>();
+            return new List<UsersViewModel>();
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
@@ -92,15 +90,24 @@ namespace IOT_UI.Controllers
                 return redirectResult;
             }
 
-            var digitalServiceId = HttpContext.Session.GetString("DigitalServiceId");
-            if (string.IsNullOrEmpty(digitalServiceId) || !Guid.TryParse(digitalServiceId, out Guid serviceId))
+            var digitalServiceIdString = HttpContext.Session.GetString("DigitalServiceId");
+            if (string.IsNullOrEmpty(digitalServiceIdString) || !Guid.TryParse(digitalServiceIdString, out Guid digitalServiceId))
             {
                 return RedirectToAction("Index", "NotificationUser");
             }
 
+            var customerIdString = HttpContext.Session.GetString("CustomerId");
+            if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
+            {
+                return RedirectToAction("Index", "NotificationUser");
+            }
+
+            var allUsers = await GetAllUsersByCustomer(customerId);
             var model = new DigitalService
             {
-                DigitalServiceID = serviceId
+                DigitalServiceID = digitalServiceId,
+                CustomerID = customerId,
+                Users = allUsers
             };
 
             return View(model);
@@ -115,17 +122,25 @@ namespace IOT_UI.Controllers
                 return View(digitalService);
             }
 
-            SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddNotificationUser?digitalServiceId={digitalService.DigitalServiceID}";
-            var content = new StringContent(JsonConvert.SerializeObject(digitalService), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _httpClient.PostAsync(url, content);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return RedirectToAction(nameof(Index), new { digitalServiceId = digitalService.DigitalServiceID });
+                SetAuthorizationHeader();
+                var url = $"{_configuration["ApiBaseUrl"]}Customer/AddNotificationUser";
+                var content = new StringContent(JsonConvert.SerializeObject(digitalService), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync(url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToAction(nameof(Index), new { digitalServiceId = digitalService.DigitalServiceID });
+                }
+
+                ModelState.AddModelError(string.Empty, "An error occurred while creating the notification user.");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"An error occurred: {ex.Message}");
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
             return View(digitalService);
         }
     }

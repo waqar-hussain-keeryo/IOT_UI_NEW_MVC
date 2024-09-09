@@ -5,11 +5,11 @@ using System.Text;
 
 namespace IOT_UI.Controllers
 {
-    public class CustomerController : BaseController
+    public class ProductTypeController : BaseController
     {
-        public CustomerController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        public ProductTypeController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
-        // Helper method to handle redirection to login if JWT token is missing
+        // Redirect to login if the user is not authenticated
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -20,36 +20,36 @@ namespace IOT_UI.Controllers
             return null;
         }
 
-        // Index action to fetch and display all customers
         public async Task<IActionResult> Index()
         {
             var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null) return redirectResult;
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
 
-            var customers = await GetAllCustomers();
-            return View(customers);
+            var productType = await GetProductType();
+            return View(productType);
         }
 
-        // Get all customers with API call
         [HttpGet]
-        private async Task<List<CustomerViewModel>> GetAllCustomers()
+        private async Task<List<ProductTypeViewModel>> GetProductType()
         {
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetAllCustomers";
+            var url = $"{_configuration["ApiBaseUrl"]}ProductType/GetAllProductTypes";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<CustomerViewModel>>>(await response.Content.ReadAsStringAsync());
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<ProductTypeViewModel>>>(await response.Content.ReadAsStringAsync());
                 if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
                 }
             }
-            return new List<CustomerViewModel>();
+            return new List<ProductTypeViewModel>();
         }
 
-        // Display the form to create a new customer
         public IActionResult Create()
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -58,17 +58,16 @@ namespace IOT_UI.Controllers
             return View();
         }
 
-        // Handle POST request to create a new customer
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CustomerViewModel customer)
+        public async Task<IActionResult> Create(ProductTypeViewModel productType)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/RegisterCustomer";
-            var content = new StringContent(JsonConvert.SerializeObject(customer), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}ProductType/CreateProductType";
+            var content = new StringContent(JsonConvert.SerializeObject(productType), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
             if (response.IsSuccessStatusCode)
@@ -77,10 +76,9 @@ namespace IOT_UI.Controllers
             }
             // Handle error (e.g., add error message to model state)
             ModelState.AddModelError(string.Empty, "Error creating customer.");
-            return View(customer);
+            return View(productType);
         }
 
-        // Display the form to edit an existing customer
         public async Task<IActionResult> Edit(Guid? id)
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -88,35 +86,33 @@ namespace IOT_UI.Controllers
 
             if (!id.HasValue) return NotFound();
 
-            var customer = await GetCustomerById(id.Value);
-            if (customer == null) return NotFound();
+            var productType = await GetProductTypeById(id.Value);
+            if (productType == null) return NotFound();
 
-            return View(customer);
+            return View(productType);
         }
 
-        // Handle POST request to update an existing customer
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(CustomerViewModel customer)
+        public async Task<IActionResult> Edit(ProductTypeViewModel productType)
         {
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/UpdateCustomer";
-            var content = new StringContent(JsonConvert.SerializeObject(customer), Encoding.UTF8, "application/json");
+            var url = $"{_configuration["ApiBaseUrl"]}ProductType/UpdateProductType";
+            var content = new StringContent(JsonConvert.SerializeObject(productType), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, content);
 
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction(nameof(Index));
             }
-            // Handle error (e.g., add error message to model state)
+
             ModelState.AddModelError(string.Empty, "Error updating customer.");
-            return View(customer);
+            return View(productType);
         }
 
-        // Display the form to confirm deletion of a customer
         public async Task<IActionResult> Delete(Guid? id)
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -124,13 +120,12 @@ namespace IOT_UI.Controllers
 
             if (!id.HasValue) return NotFound();
 
-            var customer = await GetCustomerById(id.Value);
-            if (customer == null) return NotFound();
+            var productType = await GetProductTypeById(id.Value);
+            if (productType == null) return NotFound();
 
-            return View(customer);
+            return View(productType);
         }
 
-        // Handle POST request to delete a customer
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
@@ -139,42 +134,29 @@ namespace IOT_UI.Controllers
             if (redirectResult != null) return redirectResult;
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/DeleteCustomer/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}ProductType/DeleteProductType/{id}";
             HttpResponseMessage response = await _httpClient.DeleteAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction(nameof(Index));
             }
-            // Handle error (e.g., add error message to model state)
+
             ModelState.AddModelError(string.Empty, "Error deleting customer.");
             return NotFound();
         }
 
-        // Display details of a customer
-        public async Task<IActionResult> Details(Guid? id)
-        {
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null) return redirectResult;
-
-            if (!id.HasValue) return NotFound();
-
-            var customer = await GetCustomerById(id.Value);
-            if (customer == null) return NotFound();
-
-            return View(customer);
-        }
 
         // Helper method to get a customer by ID
-        private async Task<CustomerViewModel> GetCustomerById(Guid id)
+        private async Task<ProductTypeViewModel> GetProductTypeById(Guid id)
         {
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetCustomerById/{id}";
+            var url = $"{_configuration["ApiBaseUrl"]}ProductType/GetProductTypeById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<CustomerViewModel>>(await response.Content.ReadAsStringAsync());
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<ProductTypeViewModel>>(await response.Content.ReadAsStringAsync());
                 if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
@@ -182,5 +164,6 @@ namespace IOT_UI.Controllers
             }
             return null;
         }
+
     }
 }

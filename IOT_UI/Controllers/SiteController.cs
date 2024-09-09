@@ -10,6 +10,7 @@ namespace IOT_UI.Controllers
     {
         public SiteController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
+        // Redirect to login if the user is not authenticated
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -20,6 +21,7 @@ namespace IOT_UI.Controllers
             return null;
         }
 
+        // Display the list of sites for a customer
         public async Task<IActionResult> Index(Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -31,11 +33,13 @@ namespace IOT_UI.Controllers
             // Store customerId in session
             HttpContext.Session.SetString("CustomerId", customerId.ToString());
 
+            // Fetch sites for the given customerId
             var sites = await GetSitesByCustomerId(customerId);
             ViewBag.CustomerId = customerId;
             return View(sites);
         }
 
+        // Fetch sites from API based on customerId
         [HttpGet]
         public async Task<List<Site>> GetSitesByCustomerId(Guid customerId)
         {
@@ -44,20 +48,24 @@ namespace IOT_UI.Controllers
 
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
+            // Handle API response
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
+                var data = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Site>>>(data);
 
-                if (apiResponse != null && apiResponse.Success)
+                // Return data if successful
+                if (apiResponse?.Success == true)
                 {
                     return apiResponse.Data;
                 }
             }
 
+            // Return an empty list if the API call failed
             return new List<Site>();
         }
 
+        // Show the site creation view
         public IActionResult Create()
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -80,6 +88,7 @@ namespace IOT_UI.Controllers
             return View(model);
         }
 
+        // Handle site creation
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Site site)
@@ -100,16 +109,18 @@ namespace IOT_UI.Controllers
             var content = new StringContent(JsonConvert.SerializeObject(site), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
+            // Redirect to Index on successful creation
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction(nameof(Index), new { customerId = site.CustomerID });
             }
 
+            // Add error to ModelState if creation failed
             ModelState.AddModelError(string.Empty, "An error occurred while creating the site.");
             return View(site);
         }
 
-
+        // Show the edit view for a specific site
         [HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid customerId)
         {
@@ -128,21 +139,25 @@ namespace IOT_UI.Controllers
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
+            // Handle API response
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
+                var data = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Site>>(data);
 
-                if (apiResponse != null && apiResponse.Success)
+                // Return the site data if successful
+                if (apiResponse?.Success == true)
                 {
                     ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
                 }
             }
 
+            // Return NotFound if the site is not found
             return NotFound();
         }
 
+        // Handle site updates
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Site site, Guid customerId)
@@ -157,15 +172,19 @@ namespace IOT_UI.Controllers
             var content = new StringContent(JsonConvert.SerializeObject(site), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, content);
 
+            // Redirect to Index on successful update
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction("Index", "Site", new { customerId = customerId });
+                return RedirectToAction("Index", new { customerId = customerId });
             }
 
+            // Add error to ModelState if update failed
             ModelState.AddModelError(string.Empty, "An error occurred while updating the site.");
             return View(site);
         }
 
+        // Show the delete view for a specific site
+        [HttpGet]
         public async Task<IActionResult> Delete(Guid? id, Guid customerId)
         {
             var redirectResult = RedirectToLoginIfNeeded();
@@ -183,21 +202,25 @@ namespace IOT_UI.Controllers
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
 
+            // Handle API response
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
+                var data = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Site>>(data);
 
-                if (apiResponse != null && apiResponse.Success)
+                // Return the site data if successful
+                if (apiResponse?.Success == true)
                 {
                     ViewBag.CustomerId = customerId;
                     return View(apiResponse.Data);
                 }
             }
 
+            // Return NotFound if the site is not found
             return NotFound();
         }
 
+        // Handle site deletion
         [HttpPost, ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid siteId, Guid customerId)
@@ -212,13 +235,14 @@ namespace IOT_UI.Controllers
             var url = $"{_configuration["ApiBaseUrl"]}Customer/DeleteSite/{siteId}";
             HttpResponseMessage response = await _httpClient.DeleteAsync(url);
 
+            // Redirect to Index on successful deletion
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index", new { customerId = customerId });
             }
 
+            // Return NotFound if deletion failed
             return NotFound();
         }
-
     }
 }

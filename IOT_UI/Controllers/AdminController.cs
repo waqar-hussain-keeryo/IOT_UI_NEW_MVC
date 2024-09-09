@@ -1,15 +1,16 @@
 ﻿using IOT_UI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Net.Http;
 using System.Text;
 
 namespace IOT_UI.Controllers
 {
     public class AdminController : BaseController
     {
+        // Constructor to initialize HttpClient and IConfiguration
         public AdminController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
+        // Helper method to redirect to login page if JWT token is missing
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -20,21 +21,22 @@ namespace IOT_UI.Controllers
             return null;
         }
 
-        
+        // Action to display all admins
         public async Task<IActionResult> Index()
         {
+            // Check if user needs to be redirected to login
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            var users = await GetAllAdmin();
+            var users = await GetAllAdminsAsync();
             return View(users);
         }
 
-        [HttpGet]
-        public async Task<List<UsersViewModel>> GetAllAdmin()
+        // Method to retrieve all admin users
+        private async Task<List<UsersViewModel>> GetAllAdminsAsync()
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetAllAdmin";
@@ -42,34 +44,32 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
+                var data = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<UsersViewModel>>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
-                {
-                    return apiResponse.Data;
-                }
+                return apiResponse?.Success == true ? apiResponse.Data : new List<UsersViewModel>();
             }
 
             return new List<UsersViewModel>();
         }
 
-
+        // Action to show the registration page
         public IActionResult RegisterAdmin()
         {
             return View();
         }
 
+        // Action to handle admin registration
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterAdmin(UsersViewModel user, string ConfirmPassword)
         {
+            // Validate model state
             if (!ModelState.IsValid)
             {
                 return View(user);
             }
 
-            // Check if the password and confirm password match
+            // Check if passwords match
             if (user.Password != ConfirmPassword)
             {
                 ModelState.AddModelError("ConfirmPassword", "Passwords do not match.");
@@ -83,25 +83,29 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
+                // Set a success message and redirect to login page
+                ViewBag.Message = "Admin registered successfully. Please login.";
                 return Redirect("~/Login/Index");
             }
             else
             {
+                // Set error message to view if registration fails
                 ViewBag.Message = "Error creating user. Please try again.";
                 return View(user);
             }
         }
 
-
+        // Action to display the edit page for a specific user
         public async Task<IActionResult> Edit(Guid id)
         {
+            // Check if user needs to be redirected to login
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            if (id == null)
+            if (id == Guid.Empty)
             {
                 return NotFound();
             }
@@ -112,22 +116,20 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                string data = await response.Content.ReadAsStringAsync();
+                var data = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<UsersViewModel>>(data);
-
-                if (apiResponse != null && apiResponse.Success)
-                {
-                    return View(apiResponse.Data);
-                }
+                return apiResponse?.Success == true ? View(apiResponse.Data) : NotFound();
             }
 
             return NotFound();
         }
 
+        // Action to handle user updates
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(UsersViewModel user)
         {
+            // Check if user needs to be redirected to login
             var redirectResult = RedirectToLoginIfNeeded();
             if (redirectResult != null)
             {
