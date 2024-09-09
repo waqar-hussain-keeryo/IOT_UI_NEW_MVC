@@ -137,7 +137,7 @@ namespace IOT_UI.Controllers
             }
 
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}User/UpdateUser";
+            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/UpdateAdmin";
             var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, content);
 
