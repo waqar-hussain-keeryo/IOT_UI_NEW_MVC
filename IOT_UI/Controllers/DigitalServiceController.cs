@@ -110,7 +110,10 @@ namespace IOT_UI.Controllers
 				return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
 			}
 
-			ModelState.AddModelError(string.Empty, "An error occurred while creating the digital service.");
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
 			return View(service);
 		}
 
@@ -161,8 +164,11 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { customerId = customerId });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while updating the digital service.");
-            return View(service);
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(service);
         }
 
         // Display confirmation page for deleting a digital service

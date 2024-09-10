@@ -75,9 +75,12 @@ namespace IOT_UI.Controllers
             {
                 return RedirectToAction(nameof(Index));
             }
-            // Handle error (e.g., add error message to model state)
-            ModelState.AddModelError(string.Empty, "Error creating customer.");
-            return View(customer);
+
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(customer);
         }
 
         // Display the form to edit an existing customer
@@ -111,9 +114,12 @@ namespace IOT_UI.Controllers
             {
                 return RedirectToAction(nameof(Index));
             }
-            // Handle error (e.g., add error message to model state)
-            ModelState.AddModelError(string.Empty, "Error updating customer.");
-            return View(customer);
+
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(customer);
         }
 
         // Display the form to confirm deletion of a customer
@@ -146,9 +152,12 @@ namespace IOT_UI.Controllers
             {
                 return RedirectToAction(nameof(Index));
             }
-            // Handle error (e.g., add error message to model state)
-            ModelState.AddModelError(string.Empty, "Error deleting customer.");
-            return NotFound();
+
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return NotFound();
         }
 
         // Display details of a customer

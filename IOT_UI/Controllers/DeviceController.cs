@@ -110,8 +110,11 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { siteId = device.SiteID });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while creating the device.");
-            return View(device);
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(device);
         }
 
         // Display form to edit an existing device
@@ -160,8 +163,11 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { siteId = device.SiteID });
             }
 
-            ModelState.AddModelError(string.Empty, "An error occurred while updating the device.");
-            return View(device);
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(device);
         }
     }
 }

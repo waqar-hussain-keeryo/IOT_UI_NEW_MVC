@@ -98,9 +98,11 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Add error to ModelState if creation failed
-            ModelState.AddModelError(string.Empty, "An error occurred while creating the role.");
-            return View(role);
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(role);
         }
 
         // Show the edit view for a specific role
@@ -165,9 +167,11 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Add error to ModelState if update failed
-            ModelState.AddModelError(string.Empty, "An error occurred while updating the role.");
-            return View(role);
+			string errorContent = await response.Content.ReadAsStringAsync();
+			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+
+			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+			return View(role);
         }
 
         // Show the delete view for a specific role
