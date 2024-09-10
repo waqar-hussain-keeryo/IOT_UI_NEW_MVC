@@ -1,28 +1,25 @@
-﻿<h1 class="mb-5">Dashboard</h1>
+﻿@model IOT_UI.Models.DashboardDropdown
+
+<h1 class="mb-5">Dashboard</h1>
 
 <div class="row mb-5">
     <div class="col-md-3">
-        <select class="form-control">
-            <option>Select Customer</option>
-            <option>Customer 1</option>
-            <option>Customer 2</option>
-            <option>Customer 3</option>
+        <select id="customerDropdown" class="form-control">
+            <option value="">Select Customer</option>
+            @foreach (var item in Model.Customers)
+            {
+                <option value="@item.CustomerID">@item.CustomerEmail</option>
+            }
         </select>
     </div>
     <div class="col-md-3">
-        <select class="form-control">
-            <option>Select Site</option>
-            <option>Site 1</option>
-            <option>Site 2</option>
-            <option>Site 3</option>
+        <select id="siteDropdown" class="form-control" disabled>
+            <option value="">Select Site</option>
         </select>
     </div>
     <div class="col-md-3">
-        <select class="form-control">
-            <option>Select Device</option>
-            <option>Device 1</option>
-            <option>Device 2</option>
-            <option>Device 3</option>
+        <select id="deviceDropdown" class="form-control" disabled>
+            <option value="">Select Device</option>
         </select>
     </div>
     <div class="col-md-3">
