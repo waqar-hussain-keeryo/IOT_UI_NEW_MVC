@@ -1,1 +1,109 @@
-﻿<h1>Dashboard</h1>
+﻿<h1 class="mb-5">Dashboard</h1>
+
+<div class="row mb-5">
+    <div class="col-md-3">
+        <select class="form-control">
+            <option>Select Customer</option>
+            <option>Customer 1</option>
+            <option>Customer 2</option>
+            <option>Customer 3</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-control">
+            <option>Select Site</option>
+            <option>Site 1</option>
+            <option>Site 2</option>
+            <option>Site 3</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-control">
+            <option>Select Device</option>
+            <option>Device 1</option>
+            <option>Device 2</option>
+            <option>Device 3</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <input type="date" class="form-control" />
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-6">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+    <div class="col-md-6">
+        <canvas id="windSpeedChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Temperature Chart
+    const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+    new Chart(temperatureCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Temperature (°C)',
+                data: Array.from({ length: 24 }, () => Math.floor(Math.random() * 51) + 50), // Random values between 50°C and 100°C
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Last 24 Hours'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Temperature (°C)'
+                    },
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+
+    // Wind Speed Chart
+    const windSpeedCtx = document.getElementById('windSpeedChart').getContext('2d');
+    new Chart(windSpeedCtx, {
+        type: 'bar',
+        data: {
+            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Wind Speed (km/h)',
+                data: Array.from({ length: 24 }, () => Math.floor(Math.random() * 21)),
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Last 24 Hours'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Wind Speed (km/h)'
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>

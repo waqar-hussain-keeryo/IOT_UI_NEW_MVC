@@ -135,8 +135,13 @@ namespace IOT_UI.Controllers
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Device>>(await response.Content.ReadAsStringAsync());
                 if (apiResponse?.Success == true)
                 {
+                    // Load product types for the dropdown
+                    var productType = await GetProductType();
+                    var model = apiResponse.Data;
+                    model.ProductTypeList = productType;
+
                     ViewBag.SiteId = siteId;
-                    return View(apiResponse.Data);
+                    return View(model);
                 }
             }
 
@@ -150,6 +155,8 @@ namespace IOT_UI.Controllers
         {
             if (!ModelState.IsValid)
             {
+                // Reload product types to repopulate the dropdown in case of validation error
+                device.ProductTypeList = await GetProductType();
                 return View(device);
             }
 
@@ -160,14 +167,19 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
+                // Redirect to Index view with the current siteId
                 return RedirectToAction(nameof(Index), new { siteId = device.SiteID });
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            // Handle errors
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
 
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(device);
+            // Repopulate product types and show the error message
+            device.ProductTypeList = await GetProductType();
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(device);
         }
+
     }
 }

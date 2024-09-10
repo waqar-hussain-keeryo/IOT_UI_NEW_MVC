@@ -13,21 +13,11 @@
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerPhone)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerEmail)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerCity)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerRegion)
-            </th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>City</th>
+            <th>Region</th>
             <th>Active</th>
             <th>Actions</th>
         </tr>
@@ -62,17 +52,30 @@
                     }
                 </td>
                 <td>
-                    @Html.ActionLink("Edit", "Edit", new { id = item.CustomerID }) |
-                    @Html.ActionLink("Details", "Details", new { id = item.CustomerID }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.CustomerID })
-                </td>
-                <td>
-                    <!-- Dropdown for adding Site, Device, Digital Service -->
+                    <!-- Dropdown for actions -->
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            Add
+                            Actions
                         </button>
                         <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Edit", "Customer", new { id = item.CustomerID })">
+                                    Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Details", "Customer", new { id = item.CustomerID })">
+                                    Details
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Delete", "Customer", new { id = item.CustomerID })">
+                                    Delete
+                                </a>
+                            </li>
+                            <li>
+                                <div class="dropdown-divider"></div>
+                            </li>
                             <li>
                                 <a class="dropdown-item" href="@Url.Action("Index", "User", new { customerId = item.CustomerID })">
                                     Add User

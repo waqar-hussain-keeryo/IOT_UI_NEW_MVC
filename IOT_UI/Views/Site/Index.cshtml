@@ -14,18 +14,10 @@
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.SiteName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.SiteLocation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Latitude)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Longitude)
-            </th>
+            <th>SiteName</th>
+            <th>SiteLocation</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
             <th></th>
         </tr>
     </thead>
@@ -52,19 +44,19 @@
                             Actions
                         </button>
                         <ul class="dropdown-menu">
-                            <!-- Edit Site -->
                             <li>
                                 <a class="dropdown-item" href="@Url.Action("Edit", "Site", new { id = item.SiteID, customerId = customerId })">
                                     Edit Site
                                 </a>
                             </li>
-                            <!-- Delete Site -->
                             <li>
                                 <a class="dropdown-item" href="@Url.Action("Delete", "Site", new { id = item.SiteID, customerId = customerId })">
                                     Delete Site
                                 </a>
                             </li>
-                            <!-- Add Device -->
+                            <li>
+                                <div class="dropdown-divider"></div>
+                            </li>
                             <li>
                                 <a class="dropdown-item" href="@Url.Action("Index", "Device", new { siteId = item.SiteID })">
                                     Add Device

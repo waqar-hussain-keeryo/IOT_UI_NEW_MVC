@@ -11,39 +11,55 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.DeviceName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ProductType)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ThreSholdValue)
-            </th>
-            <th></th>
+            <th>Device Name</th>
+            <th>Product Type</th>
+            <th>Threshold Value</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.DeviceName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ProductType)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ThreSholdValue)
-            </td>
-            <td>
-                    @Html.ActionLink("Edit", "Edit", new { id = item.DeviceID, siteId = siteId }) |
-                    @Html.ActionLink("Details", "Details", new { id = item.DeviceID }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.DeviceID })
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DeviceName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProductType)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ThreSholdValue)
+                </td>
+                <td>
+                    <!-- Dropdown for actions -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Edit", "Device", new { id = item.DeviceID, siteId = siteId })">
+                                    Edit
+                                </a>
+                            </li>
+                            @* <li>
+                                <a class="dropdown-item" href="@Url.Action("Details", "Device", new { id = item.DeviceID })">
+                                    Details
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Delete", "Device", new { id = item.DeviceID })">
+                                    Delete
+                                </a>
+                            </li> *@
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

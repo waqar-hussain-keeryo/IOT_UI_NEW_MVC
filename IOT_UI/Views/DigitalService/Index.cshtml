@@ -11,29 +11,27 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.ServiceStartDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ServiceEndDate)
-            </th>
+            <th>Start Date</th>
+            <th>End Date</th>
             <th>Active</th>
-            <th></th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.ServiceStartDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ServiceEndDate)
-            </td>
-            <td>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ServiceStartDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ServiceEndDate)
+                </td>
+                <td>
                     @if (item.IsActive)
                     {
                         <span>Yes</span>
@@ -42,17 +40,27 @@
                     {
                         <span>No</span>
                     }
-            </td>
-            <td>
-                    @Html.ActionLink("Edit", "Edit", new { id = item.DigitalServiceID, customerId = customerId }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.DigitalServiceID, customerId = customerId })
-            </td>
+                </td>
                 <td>
+                    <!-- Dropdown for actions -->
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            Add
+                            Actions
                         </button>
                         <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Edit", "DigitalService", new { id = item.DigitalServiceID, customerId = customerId })">
+                                    Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Delete", "DigitalService", new { id = item.DigitalServiceID, customerId = customerId })">
+                                    Delete
+                                </a>
+                            </li>
+                            <li>
+                                <div class="dropdown-divider"></div>
+                            </li>
                             <li>
                                 <a class="dropdown-item" href="@Url.Action("Index", "NotificationUser", new { digitalServiceId = item.DigitalServiceID })">
                                     Add Notification User
@@ -61,7 +69,7 @@
                         </ul>
                     </div>
                 </td>
-        </tr>
-}
+            </tr>
+        }
     </tbody>
 </table>
