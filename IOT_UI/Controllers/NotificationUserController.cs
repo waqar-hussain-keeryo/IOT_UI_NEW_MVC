@@ -35,9 +35,9 @@ namespace IOT_UI.Controllers
                 return RedirectToAction("Index", "NotificationUser");
             }
 
-            var digitalService = await GetNotificationUsers(digitalServiceId);
+            var notificationUsers = await GetNotificationUsers(digitalServiceId);
             ViewBag.DigitalServiceId = digitalServiceId;
-            return View(digitalService);
+            return View(notificationUsers);
         }
 
         [HttpGet]
@@ -62,7 +62,7 @@ namespace IOT_UI.Controllers
         }
 
         [HttpGet]
-        public async Task<List<UsersViewModel>> GetNotificationUsers(Guid digitalServiceId)
+        public async Task<List<string>> GetNotificationUsers(Guid digitalServiceId)
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetNotificationUserById/{digitalServiceId}";
@@ -71,16 +71,28 @@ namespace IOT_UI.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<UsersViewModel>>>(data);
 
-                if (apiResponse?.Success == true)
+                try
                 {
-                    return apiResponse.Data;
+                    // Assuming the API returns a simple list of strings (user emails)
+                    var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<string>>>(data);
+
+                    if (apiResponse?.Success == true)
+                    {
+                        return apiResponse.Data ?? new List<string>();
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    // Handle JSON deserialization errors
+                    // Log the exception if needed
+                    // _logger.LogError("Deserialization error: " + ex.Message);
                 }
             }
 
-            return new List<UsersViewModel>();
+            return new List<string>();
         }
+
 
         public async Task<IActionResult> Create()
         {
