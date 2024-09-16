@@ -1,4 +1,5 @@
-﻿@model IOT_UI.Models.DashboardDropdown
+﻿@using Newtonsoft.Json
+@model IOT_UI.Models.DashboardDropdown
 
 <h1 class="mb-5">Dashboard</h1>
 
@@ -28,79 +29,76 @@
 </div>
 
 <div class="row mt-3">
-    <div class="col-md-6">
-        <canvas id="temperatureChart"></canvas>
-    </div>
-    <div class="col-md-6">
-        <canvas id="windSpeedChart"></canvas>
+    <div class="col-md-12">
+        <canvas id="c128Chart"></canvas>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Temperature Chart
-    const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
-    new Chart(temperatureCtx, {
-        type: 'line',
-        data: {
-            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-            datasets: [{
-                label: 'Temperature (°C)',
-                data: Array.from({ length: 24 }, () => Math.floor(Math.random() * 51) + 50), // Random values between 50°C and 100°C
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Last 24 Hours'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Temperature (°C)'
-                    },
-                    beginAtZero: false
-                }
-            }
-        }
-    });
+    document.addEventListener('DOMContentLoaded', function () {
+        var recentData = @Html.Raw(JsonConvert.SerializeObject(Model.RecentData));
 
-    // Wind Speed Chart
-    const windSpeedCtx = document.getElementById('windSpeedChart').getContext('2d');
-    new Chart(windSpeedCtx, {
-        type: 'bar',
-        data: {
-            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-            datasets: [{
-                label: 'Wind Speed (km/h)',
-                data: Array.from({ length: 24 }, () => Math.floor(Math.random() * 21)),
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Last 24 Hours'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Wind Speed (km/h)'
+        // Prepare data for Chart.js
+        var labels = [];
+        var data = [];
+
+        // Aggregation or sampling logic
+        // Example: Aggregate data into hourly buckets
+        var aggregatedData = {};
+        recentData.forEach(dp => {
+            var time = new Date(dp.Time);
+            var hour = time.getHours();
+            var key = `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()} ${hour}:00`;
+
+            if (!aggregatedData[key]) {
+                aggregatedData[key] = { count: 0, total: 0 };
+            }
+
+            aggregatedData[key].count += 1;
+            aggregatedData[key].total += dp.C128;
+        });
+
+        for (var [key, value] of Object.entries(aggregatedData)) {
+            labels.push(key);
+            data.push(value.total / value.count);  // Average value
+        }
+
+        // Initialize the Chart.js chart
+        const ctx = document.getElementById('c128Chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'C128 Values (Hourly Average)',
+                    data: data,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20
+                        }
                     },
-                    beginAtZero: true
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'C128 Value'
+                        },
+                        beginAtZero: false
+                    }
                 }
             }
-        }
+        });
     });
 </script>

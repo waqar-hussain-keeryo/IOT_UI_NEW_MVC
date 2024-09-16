@@ -25,10 +25,29 @@ namespace IOT_UI.Controllers
             if (redirectResult != null) return redirectResult;
 
             var customers = await GetAllCustomers();
-            return View(new DashboardDropdown
+            var recentData = await GetRecentData();
+
+            var model = new DashboardDropdown
             {
-                Customers = customers
-            });
+                Customers = customers,
+                RecentData = recentData
+            };
+
+            return View(model);
+        }
+
+        private async Task<List<DataPoint>> GetRecentData()
+        {
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Dashboard/GetRecentData";
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<List<DataPoint>>(jsonResponse);
+            }
+            return new List<DataPoint>();
         }
 
         [HttpGet]
