@@ -72,11 +72,15 @@
             });
         }
 
-        function updateChart(labels, data) {
-            myChart.data.labels = labels;
-            myChart.data.datasets[0].data = data;
-            myChart.update();
+        async function loadInitialData() {
+            const result = await fetchData("24h");
+            const { labels, data } = aggregateData(result, "24h");
+            updateChart(labels, data);
         }
+
+        // Initialize chart and load initial data
+        initializeChart();
+        loadInitialData();
 
         async function fetchData(duration) {
             const response = await fetch('@Url.Action("GetChartData", "Dashboard")', {
@@ -129,6 +133,12 @@
             return { labels, data };
         }
 
+        function updateChart(labels, data) {
+            myChart.data.labels = labels;
+            myChart.data.datasets[0].data = data;
+            myChart.update();
+        }
+
         document.getElementById('durationDropdown').addEventListener('change', async function () {
             const duration = this.value;
             if (duration) {
@@ -138,14 +148,93 @@
             }
         });
 
-        async function loadInitialData() {
-            const result = await fetchData("24h");
-            const { labels, data } = aggregateData(result, "24h");
-            updateChart(labels, data);
+
+        // ----------------------------- Get Sites By Customer Id ---------------------------------
+        async function getSites(customerId) {
+            const response = await fetch(`@Url.Action("GetSitesByCustomerId", "Dashboard")?customerId=${customerId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                }
+            });
+
+            if (response.ok) {
+                return await response.json();
+            } else {
+                console.error('Error fetching data');
+                return [];
+            }
         }
 
-        // Initialize chart and load initial data
-        initializeChart();
-        loadInitialData();
+        document.getElementById('customerDropdown').addEventListener('change', async function () {
+            const customerId = this.value;
+            const siteDropdown = document.getElementById('siteDropdown');
+            const deviceDropdown = document.getElementById('deviceDropdown');
+
+            // Clear previous options
+            siteDropdown.innerHTML = '<option value="">Select Site</option>';
+            deviceDropdown.innerHTML = '<option value="">Select Device</option>';
+            siteDropdown.disabled = true;
+            deviceDropdown.disabled = true;
+
+            if (customerId) {
+                const result = await getSites(customerId);
+
+                // Populate site dropdown
+                result.forEach(site => {
+                    const option = document.createElement('option');
+                    option.value = site.siteID;
+                    option.textContent = site.siteName;
+                    siteDropdown.appendChild(option);
+                });
+
+                siteDropdown.disabled = false;
+            }
+        });
+
+
+        // ----------------------------- Get Devices By Site Id ---------------------------------
+        async function getDevices(siteId) {
+            const response = await fetch(`@Url.Action("GetDevicesBySiteId", "Dashboard")?siteId=${siteId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                }
+            });
+
+            if (response.ok) {
+                return await response.json();
+            } else {
+                console.error('Error fetching data');
+                return [];
+            }
+        }
+
+        document.getElementById('siteDropdown').addEventListener('change', async function () {
+            const siteId = this.value;
+            const deviceDropdown = document.getElementById('deviceDropdown');
+
+            // Clear previous options
+            deviceDropdown.innerHTML = '<option value="">Select Device</option>';
+            deviceDropdown.disabled = true;
+
+            if (siteId) {
+                const result = await getDevices(siteId);
+                console.log(result);
+
+                // Populate site dropdown
+                result.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceID;
+                    option.textContent = device.deviceName;
+                    deviceDropdown.appendChild(option);
+                });
+
+                deviceDropdown.disabled = false;
+            }
+        });
+
     });
 </script>

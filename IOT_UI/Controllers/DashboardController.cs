@@ -74,5 +74,49 @@ namespace IOT_UI.Controllers
             }
             return new List<CustomerViewModel>();
         }
+
+        [HttpGet]
+        public async Task<List<Site>> GetSitesByCustomerId(Guid customerId)
+        {
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetCustomerSites?customerId={customerId}";
+
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            // Handle API response
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Site>>>(data);
+
+                // Return data if successful
+                if (apiResponse?.Success == true)
+                {
+                    return apiResponse.Data;
+                }
+            }
+
+            // Return an empty list if the API call failed
+            return new List<Site>();
+        }
+
+        [HttpGet]
+        public async Task<List<Device>> GetDevicesBySiteId(Guid siteId)
+        {
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteDevices?siteId={siteId}";
+
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Device>>>(await response.Content.ReadAsStringAsync());
+                if (apiResponse?.Success == true)
+                {
+                    return apiResponse.Data;
+                }
+            }
+            return new List<Device>();
+        }
     }
 }
