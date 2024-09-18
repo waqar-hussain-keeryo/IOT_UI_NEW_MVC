@@ -1,6 +1,7 @@
 ﻿using IOT_UI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace IOT_UI.Controllers
 {
@@ -8,7 +9,6 @@ namespace IOT_UI.Controllers
     {
         public DashboardController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
 
-        // Helper method to handle redirection to login if JWT token is missing
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -25,7 +25,7 @@ namespace IOT_UI.Controllers
             if (redirectResult != null) return redirectResult;
 
             var customers = await GetAllCustomers();
-            var recentData = await GetRecentData();
+            var recentData = await GetChartData(new DataPoint { Duration = "24h" });
 
             var model = new DashboardDropdown
             {
@@ -36,11 +36,18 @@ namespace IOT_UI.Controllers
             return View(model);
         }
 
-        private async Task<List<DataPoint>> GetRecentData()
+        [HttpPost]
+        public async Task<List<DataPoint>> GetChartData([FromBody] DataPoint requestBody)
         {
             SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Dashboard/GetRecentData";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
+            string duration = requestBody.Duration;
+
+            var url = $"{_configuration["ApiBaseUrl"]}Dashboard/GetChartData";
+
+            var json = JsonConvert.SerializeObject(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -66,42 +73,6 @@ namespace IOT_UI.Controllers
                 }
             }
             return new List<CustomerViewModel>();
-        }
-
-        [HttpGet("GetSitesByCustomerId")]
-        public async Task<IActionResult> GetSitesByCustomerId(Guid customerId)
-        {
-            SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetCustomerSites?customerId={customerId}";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Site>>>(await response.Content.ReadAsStringAsync());
-                if (apiResponse?.Success == true)
-                {
-                    return Ok(apiResponse.Data);
-                }
-            }
-            return Ok(new List<Site>());
-        }
-
-        [HttpGet("GetDevicesBySiteId")]
-        public async Task<IActionResult> GetDevicesBySiteId(Guid siteId)
-        {
-            SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteDevices?siteId={siteId}";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<Device>>>(await response.Content.ReadAsStringAsync());
-                if (apiResponse?.Success == true)
-                {
-                    return Ok(apiResponse.Data);
-                }
-            }
-            return Ok(new List<Device>());
         }
     }
 }
