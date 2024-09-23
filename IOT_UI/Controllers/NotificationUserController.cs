@@ -36,8 +36,17 @@ namespace IOT_UI.Controllers
             }
 
             var notificationUsers = await GetNotificationUsers(digitalServiceId);
-            ViewBag.DigitalServiceId = digitalServiceId;
-            return View(notificationUsers);
+            var allUsers = await GetAllUsersByCustomer(customerId);
+
+            var model = new DigitalService
+            {
+                DigitalServiceID = digitalServiceId,
+                NotificationUsers = notificationUsers,
+                CustomerID = customerId,
+                Users = allUsers
+            };
+
+            return View(model);
         }
 
         [HttpGet]
@@ -72,21 +81,11 @@ namespace IOT_UI.Controllers
             {
                 var data = await response.Content.ReadAsStringAsync();
 
-                try
-                {
-                    // Assuming the API returns a simple list of strings (user emails)
-                    var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<string>>>(data);
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<string>>>(data);
 
-                    if (apiResponse?.Success == true)
-                    {
-                        return apiResponse.Data ?? new List<string>();
-                    }
-                }
-                catch (JsonException ex)
+                if (apiResponse?.Success == true)
                 {
-                    // Handle JSON deserialization errors
-                    // Log the exception if needed
-                    // _logger.LogError("Deserialization error: " + ex.Message);
+                    return apiResponse.Data ?? new List<string>();
                 }
             }
 
@@ -94,44 +93,13 @@ namespace IOT_UI.Controllers
         }
 
 
-        public async Task<IActionResult> Create()
-        {
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
-            {
-                return redirectResult;
-            }
-
-            var digitalServiceIdString = HttpContext.Session.GetString("DigitalServiceId");
-            if (string.IsNullOrEmpty(digitalServiceIdString) || !Guid.TryParse(digitalServiceIdString, out Guid digitalServiceId))
-            {
-                return RedirectToAction("Index", "NotificationUser");
-            }
-
-            var customerIdString = HttpContext.Session.GetString("CustomerId");
-            if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
-            {
-                return RedirectToAction("Index", "NotificationUser");
-            }
-
-            var allUsers = await GetAllUsersByCustomer(customerId);
-            var model = new DigitalService
-            {
-                DigitalServiceID = digitalServiceId,
-                CustomerID = customerId,
-                Users = allUsers
-            };
-
-            return View(model);
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DigitalService digitalService)
+        public async Task<IActionResult> Create([FromBody] DigitalService digitalService)
         {
             if (!ModelState.IsValid)
             {
-                return View(digitalService);
+                return Json(new { success = false, message = "Invalid data." });
             }
 
             try
@@ -143,17 +111,16 @@ namespace IOT_UI.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return RedirectToAction(nameof(Index), new { digitalServiceId = digitalService.DigitalServiceID });
+                    return Json(new { success = true });
                 }
 
-                ModelState.AddModelError(string.Empty, "An error occurred while creating the notification user.");
+                return Json(new { success = false, message = "An error occurred while creating the notification user." });
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, $"An error occurred: {ex.Message}");
+                return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
             }
-
-            return View(digitalService);
         }
+
     }
 }

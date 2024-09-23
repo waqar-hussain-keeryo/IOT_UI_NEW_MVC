@@ -61,7 +61,7 @@ namespace IOT_UI.Models
         public bool IsActive { get; set; }
         public List<string> NotificationUsers { get; set; } = new List<string>();
         public Guid? CustomerID { get; set; }
-        public bool IsDeleted { get; set; }
+        public bool? IsDeleted { get; set; }
         public List<UsersViewModel>? Users { get; set; }
     }
 }
