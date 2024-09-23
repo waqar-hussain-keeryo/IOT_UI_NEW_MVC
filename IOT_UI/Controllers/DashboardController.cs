@@ -25,26 +25,22 @@ namespace IOT_UI.Controllers
             if (redirectResult != null) return redirectResult;
 
             var customers = await GetAllCustomers();
-            var recentData = await GetChartData(new DataPoint { Duration = "24h" });
-
+            
             var model = new DashboardDropdown
             {
-                Customers = customers,
-                RecentData = recentData
+                Customers = customers
             };
 
             return View(model);
         }
 
         [HttpPost]
-        public async Task<List<DataPoint>> GetChartData([FromBody] DataPoint requestBody)
+        public async Task<List<DataPoint>> GetChartData([FromBody] ChartRequest request)
         {
             SetAuthorizationHeader();
-            string duration = requestBody.Duration;
 
             var url = $"{_configuration["ApiBaseUrl"]}Dashboard/GetChartData";
-
-            var json = JsonConvert.SerializeObject(requestBody);
+            var json = JsonConvert.SerializeObject(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = await _httpClient.PostAsync(url, content);

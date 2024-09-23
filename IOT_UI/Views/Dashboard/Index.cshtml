@@ -25,7 +25,6 @@
     </div>
     <div class="col-md-3">
         <select id="durationDropdown" class="form-control">
-            <option value="">Select Duration</option>
             <option value="24h" selected>24 Hours</option>
             <option value="1w">1 Week</option>
             <option value="30d">1 Month</option>
@@ -40,6 +39,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ctx = document.getElementById('dashboardChart').getContext('2d');
@@ -51,7 +51,7 @@
                 data: {
                     labels: [],
                     datasets: [{
-                        label: 'C128 Values (Average)',
+                        label: 'Values (Average)',
                         data: [],
                         borderColor: 'rgba(75, 192, 192, 1)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -64,7 +64,7 @@
                             title: { display: true, text: 'Time' },
                         },
                         y: {
-                            title: { display: true, text: 'C128 Value' },
+                            title: { display: true, text: 'Value' },
                             beginAtZero: false
                         }
                     }
@@ -72,24 +72,20 @@
             });
         }
 
-        async function loadInitialData() {
-            const result = await fetchData("24h");
-            const { labels, data } = aggregateData(result, "24h");
-            updateChart(labels, data);
+        function clearChart() {
+            myChart.data.labels = [];
+            myChart.data.datasets[0].data = [];
+            myChart.update();
         }
 
-        // Initialize chart and load initial data
-        initializeChart();
-        loadInitialData();
-
-        async function fetchData(duration) {
+        async function fetchData(duration, deviceId) {
             const response = await fetch('@Url.Action("GetChartData", "Dashboard")', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                 },
-                body: JSON.stringify({ Duration: duration })
+                body: JSON.stringify({ Duration: duration, DeviceId: deviceId })
             });
 
             if (response.ok) {
@@ -120,7 +116,7 @@
                     aggregatedData[key] = { count: 0, total: 0 };
                 }
                 aggregatedData[key].count += 1;
-                aggregatedData[key].total += dp.c128;
+                aggregatedData[key].total += dp.value;
             });
 
             const labels = [];
@@ -141,15 +137,15 @@
 
         document.getElementById('durationDropdown').addEventListener('change', async function () {
             const duration = this.value;
-            if (duration) {
-                const result = await fetchData(duration);
+            const deviceId = document.getElementById('deviceDropdown').value;
+            if (deviceId) {
+                const result = await fetchData(duration, deviceId);
                 const { labels, data } = aggregateData(result, duration);
                 updateChart(labels, data);
             }
         });
 
-
-        // ----------------------------- Get Sites By Customer Id ---------------------------------
+        // Get Sites By Customer Id
         async function getSites(customerId) {
             const response = await fetch(`@Url.Action("GetSitesByCustomerId", "Dashboard")?customerId=${customerId}`, {
                 method: 'GET',
@@ -193,8 +189,7 @@
             }
         });
 
-
-        // ----------------------------- Get Devices By Site Id ---------------------------------
+        // Get Devices By Site Id
         async function getDevices(siteId) {
             const response = await fetch(`@Url.Action("GetDevicesBySiteId", "Dashboard")?siteId=${siteId}`, {
                 method: 'GET',
@@ -222,9 +217,8 @@
 
             if (siteId) {
                 const result = await getDevices(siteId);
-                console.log(result);
 
-                // Populate site dropdown
+                // Populate device dropdown
                 result.forEach(device => {
                     const option = document.createElement('option');
                     option.value = device.deviceID;
@@ -236,5 +230,21 @@
             }
         });
 
+        // Show Chart By Device Id
+        document.getElementById('deviceDropdown').addEventListener('change', async function () {
+            const deviceId = this.value;
+            const duration = document.getElementById('durationDropdown').value;
+            if (deviceId) {
+                const result = await fetchData(duration, deviceId);
+                const { labels, data } = aggregateData(result, duration);
+                updateChart(labels, data);
+            } else {
+                clearChart(); // Clear the chart if no device is selected
+            }
+        });
+
+        // Initialize chart but don't load data initially
+        initializeChart();
     });
 </script>
+

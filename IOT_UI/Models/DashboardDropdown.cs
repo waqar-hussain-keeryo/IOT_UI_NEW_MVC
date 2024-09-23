@@ -12,6 +12,12 @@
     {
         public string? Duration { get; set; }
         public DateTime? Time { get; set; }
-        public double? C128 { get; set; }
+        public double? Value { get; set; }
+    }
+
+    public class ChartRequest
+    {
+        public Guid DeviceId { get; set; }
+        public string Duration { get; set; }
     }
 }
