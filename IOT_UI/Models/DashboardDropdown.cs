@@ -10,9 +10,13 @@
 
     public class DataPoint
     {
+        public double? MinValue { get; set; }
+        public double? MaxValue { get; set; }
+        public double? ThresholdValue { get; set; }
         public string? Duration { get; set; }
         public DateTime? Time { get; set; }
-        public double? Value { get; set; }
+        public double? Temperature { get; set; }
+        public double? WindSpeed { get; set; }
     }
 
     public class ChartRequest

@@ -45,18 +45,27 @@
         const ctx = document.getElementById('dashboardChart').getContext('2d');
         let myChart;
 
-        function initializeChart() {
+        function initializeChart(labels = [], temperatureData = [], windSpeedData = []) {
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Values (Average)',
-                        data: [],
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderWidth: 1
-                    }]
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Temperature',
+                            data: temperatureData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Wind Speed',
+                            data: windSpeedData,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderWidth: 1
+                        }
+                    ]
                 },
                 options: {
                     scales: {
@@ -73,9 +82,9 @@
         }
 
         function clearChart() {
-            myChart.data.labels = [];
-            myChart.data.datasets[0].data = [];
-            myChart.update();
+            if (myChart) {
+                myChart.destroy();  // Destroy the existing chart to reset
+            }
         }
 
         async function fetchData(duration, deviceId) {
@@ -96,8 +105,71 @@
             }
         }
 
+        //24 hours records
+        // function aggregateData(result, duration) {
+        //     const aggregatedData = {
+        //         temperature: {},
+        //         windSpeed: {}
+        //     };
+
+        //     result.forEach(dp => {
+        //         if (!dp.time) return; // Skip invalid data
+        //         const time = new Date(dp.time);
+
+        //         let key;
+        //         if (duration === '24h') {
+        //             key = `${time.getHours()}:00`;
+        //         } else if (duration === '1w' || duration === '30d') {
+        //             key = `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`;
+        //         }
+
+        //         // Aggregate temperature
+        //         if (dp.temperature !== null) {
+        //             if (!aggregatedData.temperature[key]) {
+        //                 aggregatedData.temperature[key] = { count: 0, total: 0 };
+        //             }
+        //             aggregatedData.temperature[key].count += 1;
+        //             aggregatedData.temperature[key].total += dp.temperature;
+        //         }
+
+        //         // Aggregate wind speed
+        //         if (dp.windSpeed !== null) {
+        //             if (!aggregatedData.windSpeed[key]) {
+        //                 aggregatedData.windSpeed[key] = { count: 0, total: 0 };
+        //             }
+        //             aggregatedData.windSpeed[key].count += 1;
+        //             aggregatedData.windSpeed[key].total += dp.windSpeed;
+        //         }
+        //     });
+
+        //     const labels = [];
+        //     const temperatureData = [];
+        //     const windSpeedData = [];
+
+        //     for (const [key, value] of Object.entries(aggregatedData.temperature)) {
+        //         labels.push(key);
+        //         temperatureData.push(value.total / value.count);
+        //     }
+
+        //     for (const [key, value] of Object.entries(aggregatedData.windSpeed)) {
+        //         if (labels.includes(key)) {
+        //             windSpeedData.push(value.total / value.count);
+        //         } else {
+        //             labels.push(key);
+        //             windSpeedData.push(value.total / value.count);
+        //         }
+        //     }
+
+        //     return { labels, temperatureData, windSpeedData };
+        // }
+
+
+        //Each minute records
         function aggregateData(result, duration) {
-            const aggregatedData = {};
+            const aggregatedData = {
+                temperature: {},
+                windSpeed: {}
+            };
 
             result.forEach(dp => {
                 if (!dp.time) return; // Skip invalid data
@@ -105,34 +177,54 @@
 
                 let key;
                 if (duration === '24h') {
-                    key = `${time.getHours()}:00`;
-                } else if (duration === '1w') {
-                    key = `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`;
-                } else if (duration === '30d') {
+                    // Include both hour and minutes for the key in 24h duration
+                    const hours = String(time.getHours()).padStart(2, '0'); // Pad single digits with leading zero
+                    const minutes = String(time.getMinutes()).padStart(2, '0');
+                    key = `${hours}:${minutes}`;
+                } else if (duration === '1w' || duration === '30d') {
+                    // Aggregation by day for week and month
                     key = `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`;
                 }
 
-                if (!aggregatedData[key]) {
-                    aggregatedData[key] = { count: 0, total: 0 };
+                // Aggregate temperature
+                if (dp.temperature !== null) {
+                    if (!aggregatedData.temperature[key]) {
+                        aggregatedData.temperature[key] = { count: 0, total: 0 };
+                    }
+                    aggregatedData.temperature[key].count += 1;
+                    aggregatedData.temperature[key].total += dp.temperature;
                 }
-                aggregatedData[key].count += 1;
-                aggregatedData[key].total += dp.value;
+
+                // Aggregate wind speed
+                if (dp.windSpeed !== null) {
+                    if (!aggregatedData.windSpeed[key]) {
+                        aggregatedData.windSpeed[key] = { count: 0, total: 0 };
+                    }
+                    aggregatedData.windSpeed[key].count += 1;
+                    aggregatedData.windSpeed[key].total += dp.windSpeed;
+                }
             });
 
             const labels = [];
-            const data = [];
-            for (const [key, value] of Object.entries(aggregatedData)) {
+            const temperatureData = [];
+            const windSpeedData = [];
+
+            // Prepare data for charting
+            for (const [key, value] of Object.entries(aggregatedData.temperature)) {
                 labels.push(key);
-                data.push(value.total / value.count);
+                temperatureData.push(value.total / value.count);
             }
 
-            return { labels, data };
-        }
+            for (const [key, value] of Object.entries(aggregatedData.windSpeed)) {
+                if (labels.includes(key)) {
+                    windSpeedData.push(value.total / value.count);
+                } else {
+                    labels.push(key);
+                    windSpeedData.push(value.total / value.count);
+                }
+            }
 
-        function updateChart(labels, data) {
-            myChart.data.labels = labels;
-            myChart.data.datasets[0].data = data;
-            myChart.update();
+            return { labels, temperatureData, windSpeedData };
         }
 
         document.getElementById('durationDropdown').addEventListener('change', async function () {
@@ -140,8 +232,9 @@
             const deviceId = document.getElementById('deviceDropdown').value;
             if (deviceId) {
                 const result = await fetchData(duration, deviceId);
-                const { labels, data } = aggregateData(result, duration);
-                updateChart(labels, data);
+                const { labels, temperatureData, windSpeedData } = aggregateData(result, duration);
+                clearChart();
+                initializeChart(labels, temperatureData, windSpeedData);
             }
         });
 
@@ -236,15 +329,12 @@
             const duration = document.getElementById('durationDropdown').value;
             if (deviceId) {
                 const result = await fetchData(duration, deviceId);
-                const { labels, data } = aggregateData(result, duration);
-                updateChart(labels, data);
+                const { labels, temperatureData, windSpeedData } = aggregateData(result, duration);
+                clearChart();
+                initializeChart(labels, temperatureData, windSpeedData);
             } else {
                 clearChart(); // Clear the chart if no device is selected
             }
         });
-
-        // Initialize chart but don't load data initially
-        initializeChart();
     });
 </script>
-
