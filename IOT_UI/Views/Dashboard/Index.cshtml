@@ -9,7 +9,7 @@
             <option value="">Select Customer</option>
             @foreach (var item in Model.Customers)
             {
-                <option value="@item.CustomerID">@item.CustomerEmail</option>
+                <option value="@item.CustomerID">@item.CustomerName</option>
             }
         </select>
     </div>
@@ -45,7 +45,7 @@
         const ctx = document.getElementById('dashboardChart').getContext('2d');
         let myChart;
 
-        function initializeChart(labels = [], temperatureData = [], windSpeedData = []) {
+        function initializeChart(labels = [], temperatureData = [], windSpeedData = [], temperatureThresholds = [], windSpeedThresholds = []) {
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -54,16 +54,36 @@
                         {
                             label: 'Temperature',
                             data: temperatureData,
-                            borderColor: 'rgba(255, 99, 132, 1)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            pointBackgroundColor: temperatureData.map((value, index) =>
+                                value > temperatureThresholds[index] ? 'rgba(255, 0, 0, 1)' : 'rgba(255, 99, 132, 1)'
+                            ), // Point color based on threshold
+                            segment: {
+                                borderColor: ctx => {
+                                    const index = ctx.p0DataIndex;
+                                    return temperatureData[index] > temperatureThresholds[index] || temperatureData[index + 1] > temperatureThresholds[index + 1]
+                                        ? 'rgba(255, 0, 0, 1)'  // Red if above threshold
+                                        : 'rgba(255, 99, 132, 1)';  // Default color
+                                }
+                            }
                         },
                         {
                             label: 'Wind Speed',
                             data: windSpeedData,
-                            borderColor: 'rgba(54, 162, 235, 1)',
                             backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            pointBackgroundColor: windSpeedData.map((value, index) =>
+                                value > windSpeedThresholds[index] ? 'rgba(0, 0, 255, 1)' : 'rgba(54, 162, 235, 1)'
+                            ), // Point color based on threshold
+                            segment: {
+                                borderColor: ctx => {
+                                    const index = ctx.p0DataIndex;
+                                    return windSpeedData[index] > windSpeedThresholds[index] || windSpeedData[index + 1] > windSpeedThresholds[index + 1]
+                                        ? 'rgba(0, 0, 255, 1)'  // Blue if above threshold
+                                        : 'rgba(54, 162, 235, 1)';  // Default color
+                                }
+                            }
                         }
                     ]
                 },
@@ -81,9 +101,10 @@
             });
         }
 
+
         function clearChart() {
             if (myChart) {
-                myChart.destroy();  // Destroy the existing chart to reset
+                myChart.destroy();
             }
         }
 
@@ -165,10 +186,13 @@
 
 
         //Each minute records
+
         function aggregateData(result, duration) {
             const aggregatedData = {
                 temperature: {},
-                windSpeed: {}
+                windSpeed: {},
+                temperatureThreshold: {},
+                windSpeedThreshold: {}
             };
 
             result.forEach(dp => {
@@ -177,28 +201,27 @@
 
                 let key;
                 if (duration === '24h') {
-                    // Include both hour and minutes for the key in 24h duration
-                    const hours = String(time.getHours()).padStart(2, '0'); // Pad single digits with leading zero
-                    const minutes = String(time.getMinutes()).padStart(2, '0');
-                    key = `${hours}:${minutes}`;
+                    const hours = String(time.getHours()).padStart(2, '0');
+                    const minutes = Math.floor(time.getMinutes() / 5) * 5;
+                    const roundedMinutes = String(minutes).padStart(2, '0');
+                    key = `${hours}:${roundedMinutes}`;
                 } else if (duration === '1w' || duration === '30d') {
-                    // Aggregation by day for week and month
                     key = `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`;
                 }
 
-                // Aggregate temperature
                 if (dp.temperature !== null) {
                     if (!aggregatedData.temperature[key]) {
                         aggregatedData.temperature[key] = { count: 0, total: 0 };
+                        aggregatedData.temperatureThreshold[key] = dp.thresholdValue || null;
                     }
                     aggregatedData.temperature[key].count += 1;
                     aggregatedData.temperature[key].total += dp.temperature;
                 }
 
-                // Aggregate wind speed
                 if (dp.windSpeed !== null) {
                     if (!aggregatedData.windSpeed[key]) {
                         aggregatedData.windSpeed[key] = { count: 0, total: 0 };
+                        aggregatedData.windSpeedThreshold[key] = dp.thresholdValue || null;
                     }
                     aggregatedData.windSpeed[key].count += 1;
                     aggregatedData.windSpeed[key].total += dp.windSpeed;
@@ -208,24 +231,29 @@
             const labels = [];
             const temperatureData = [];
             const windSpeedData = [];
+            const temperatureThresholds = [];
+            const windSpeedThresholds = [];
 
-            // Prepare data for charting
             for (const [key, value] of Object.entries(aggregatedData.temperature)) {
                 labels.push(key);
                 temperatureData.push(value.total / value.count);
+                temperatureThresholds.push(aggregatedData.temperatureThreshold[key]);
             }
 
             for (const [key, value] of Object.entries(aggregatedData.windSpeed)) {
                 if (labels.includes(key)) {
                     windSpeedData.push(value.total / value.count);
+                    windSpeedThresholds.push(aggregatedData.windSpeedThreshold[key]);
                 } else {
                     labels.push(key);
                     windSpeedData.push(value.total / value.count);
+                    windSpeedThresholds.push(aggregatedData.windSpeedThreshold[key]);
                 }
             }
 
-            return { labels, temperatureData, windSpeedData };
+            return { labels, temperatureData, windSpeedData, temperatureThresholds, windSpeedThresholds };
         }
+
 
         document.getElementById('durationDropdown').addEventListener('change', async function () {
             const duration = this.value;
@@ -329,12 +357,13 @@
             const duration = document.getElementById('durationDropdown').value;
             if (deviceId) {
                 const result = await fetchData(duration, deviceId);
-                const { labels, temperatureData, windSpeedData } = aggregateData(result, duration);
+                const { labels, temperatureData, windSpeedData, temperatureThresholds, windSpeedThresholds } = aggregateData(result, duration);
                 clearChart();
-                initializeChart(labels, temperatureData, windSpeedData);
+                initializeChart(labels, temperatureData, windSpeedData, temperatureThresholds, windSpeedThresholds);
             } else {
                 clearChart(); // Clear the chart if no device is selected
             }
         });
+
     });
 </script>

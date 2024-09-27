@@ -7,8 +7,32 @@ namespace IOT_UI.Controllers
 {
     public class NotificationUserController : BaseController
     {
-        public NotificationUserController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
+        public NotificationUserController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection) : base(httpClient, configuration)
+        {
+            _apiConnection = apiConnection;
+        }
+
+        // Check API connection and redirect if necessary
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError");
+            }
+
+            var token = HttpContext.Session.GetString("JWTtoken");
+            if (string.IsNullOrEmpty(token))
+            {
+                return Redirect("~/Login/Index");
+            }
+
+            return null;
+        }
+
+        // Check if user is logged in; this method can be merged with CheckApiConnectionIfNeeded if desired.
         private IActionResult RedirectToLoginIfNeeded()
         {
             var token = HttpContext.Session.GetString("JWTtoken");
@@ -21,7 +45,7 @@ namespace IOT_UI.Controllers
 
         public async Task<IActionResult> Index(Guid digitalServiceId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -63,7 +87,7 @@ namespace IOT_UI.Controllers
 
                 if (apiResponse?.Success == true)
                 {
-                    return apiResponse.Data;
+                    return apiResponse.Data ?? new List<UsersViewModel>();
                 }
             }
 
@@ -80,7 +104,6 @@ namespace IOT_UI.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadAsStringAsync();
-
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<string>>>(data);
 
                 if (apiResponse?.Success == true)
@@ -92,11 +115,16 @@ namespace IOT_UI.Controllers
             return new List<string>();
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([FromBody] DigitalService digitalService)
         {
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             if (!ModelState.IsValid)
             {
                 return Json(new { success = false, message = "Invalid data." });
@@ -121,6 +149,5 @@ namespace IOT_UI.Controllers
                 return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
-
     }
 }

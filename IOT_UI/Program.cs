@@ -1,3 +1,4 @@
+using IOT_UI;
 using IOT_UI.Controllers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -5,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add the APIConnection service to the container
+builder.Services.AddScoped<APIConnection>();
 
 builder.Services.AddSession(options =>
 {

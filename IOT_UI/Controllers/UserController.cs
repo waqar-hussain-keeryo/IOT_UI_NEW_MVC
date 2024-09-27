@@ -2,29 +2,41 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IOT_UI.Controllers
 {
     public class UserController : BaseController
     {
-        public UserController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        // Redirect to login if JWT token is missing or invalid
-        private IActionResult RedirectToLoginIfNeeded()
+        public UserController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection)
+            : base(httpClient, configuration)
         {
+            _apiConnection = apiConnection;
+        }
+
+        // Check API connection and redirect if necessary
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError");
+            }
+
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
                 return Redirect("~/Login/Index");
             }
+
             return null;
         }
 
         // Display all users for a specific customer
         public async Task<IActionResult> Index(Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -65,9 +77,9 @@ namespace IOT_UI.Controllers
         }
 
         // Show the user creation form
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -92,7 +104,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UsersViewModel user, string ConfirmPassword)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -121,23 +133,23 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { customerId = user.CustomerId });
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(user);
+            // Handle error response
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(user);
         }
 
         // Show the user edit form
         public async Task<IActionResult> Edit(Guid? id, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            if (id == Guid.Empty)
+            if (id == null || id == Guid.Empty)
             {
                 return NotFound();
             }
@@ -169,7 +181,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditUserViewModel user, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -191,17 +203,17 @@ namespace IOT_UI.Controllers
                 return RedirectToAction("Index", new { customerId = customerId });
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(user);
+            // Handle error response
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(user);
         }
 
         // Show the user delete confirmation view
         public async Task<IActionResult> Delete(Guid id, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -235,11 +247,11 @@ namespace IOT_UI.Controllers
         }
 
         // Handle the deletion of a user
-        [HttpPost, ActionName("Delete")]
+        [HttpPost, ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -262,7 +274,7 @@ namespace IOT_UI.Controllers
         // Show detailed information about a user
         public async Task<IActionResult> Details(Guid? id, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;

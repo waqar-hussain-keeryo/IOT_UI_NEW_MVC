@@ -7,30 +7,43 @@ namespace IOT_UI.Controllers
 {
     public class DeviceController : BaseController
     {
-        public DeviceController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        // Redirect to login page if JWT token is missing
-        private IActionResult RedirectToLoginIfNeeded()
+        public DeviceController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection) : base(httpClient, configuration)
         {
+            _apiConnection = apiConnection;
+        }
+
+        // Check API connection and redirect if necessary
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError");
+            }
+
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
                 return Redirect("~/Login/Index");
             }
+
             return null;
         }
 
         // Display devices for a specific site
         public async Task<IActionResult> Index(Guid siteId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null) return redirectResult;
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return checkResult;
 
             // Store siteId in session
             HttpContext.Session.SetString("SiteId", siteId.ToString());
 
             var devices = await GetDevicesBySiteId(siteId);
-            
+
             ViewBag.SiteId = siteId;
             return View(devices);
         }
@@ -39,6 +52,9 @@ namespace IOT_UI.Controllers
         [HttpGet]
         private async Task<List<Device>> GetDevicesBySiteId(Guid siteId)
         {
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return new List<Device>();
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteDevices?siteId={siteId}";
 
@@ -58,6 +74,9 @@ namespace IOT_UI.Controllers
         [HttpGet]
         private async Task<List<ProductTypeViewModel>> GetProductType()
         {
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return new List<ProductTypeViewModel>();
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}ProductType/GetAllProductTypes";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -76,8 +95,9 @@ namespace IOT_UI.Controllers
         // Display form to create a new device
         public async Task<IActionResult> Create()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null) return redirectResult;
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return checkResult;
 
             var siteIdString = HttpContext.Session.GetString("SiteId");
             if (string.IsNullOrEmpty(siteIdString) || !Guid.TryParse(siteIdString, out Guid siteId))
@@ -95,6 +115,10 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Device device)
         {
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return checkResult;
+
             if (!ModelState.IsValid)
             {
                 device.ProductTypeList = await GetProductType();
@@ -120,13 +144,13 @@ namespace IOT_UI.Controllers
             return View(device);
         }
 
-
         // Display form to edit an existing device
         [HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid siteId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null) return redirectResult;
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return checkResult;
 
             if (!id.HasValue) return NotFound();
 
@@ -157,6 +181,10 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Device device)
         {
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return checkResult;
+
             if (!ModelState.IsValid)
             {
                 // Reload product types to repopulate the dropdown in case of validation error
@@ -184,6 +212,5 @@ namespace IOT_UI.Controllers
             ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
             return View(device);
         }
-
     }
 }

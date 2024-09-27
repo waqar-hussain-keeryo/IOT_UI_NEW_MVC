@@ -7,33 +7,46 @@ namespace IOT_UI.Controllers
 {
     public class ProductTypeController : BaseController
     {
-        public ProductTypeController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        // Redirect to login if the user is not authenticated
-        private IActionResult RedirectToLoginIfNeeded()
+        public ProductTypeController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection)
+            : base(httpClient, configuration)
         {
+            _apiConnection = apiConnection;
+        }
+
+        // Check API connection and redirect if necessary
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError");
+            }
+
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
                 return Redirect("~/Login/Index");
             }
+
             return null;
         }
 
         public async Task<IActionResult> Index()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            var productType = await GetProductType();
-            return View(productType);
+            var productTypes = await GetProductTypes();
+            return View(productTypes);
         }
 
         [HttpGet]
-        private async Task<List<ProductTypeViewModel>> GetProductType()
+        private async Task<List<ProductTypeViewModel>> GetProductTypes()
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}ProductType/GetAllProductTypes";
@@ -44,15 +57,15 @@ namespace IOT_UI.Controllers
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<List<ProductTypeViewModel>>>(await response.Content.ReadAsStringAsync());
                 if (apiResponse?.Success == true)
                 {
-                    return apiResponse.Data;
+                    return apiResponse.Data ?? new List<ProductTypeViewModel>();
                 }
             }
             return new List<ProductTypeViewModel>();
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             return View();
@@ -62,8 +75,13 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProductTypeViewModel productType)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
+
+            if (!ModelState.IsValid)
+            {
+                return View(productType);
+            }
 
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}ProductType/CreateProductType";
@@ -75,16 +93,15 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(productType);
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(productType);
         }
 
         public async Task<IActionResult> Edit(Guid? id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             if (!id.HasValue) return NotFound();
@@ -99,8 +116,13 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProductTypeViewModel productType)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
+
+            if (!ModelState.IsValid)
+            {
+                return View(productType);
+            }
 
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}ProductType/UpdateProductType";
@@ -112,16 +134,15 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(productType);
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(productType);
         }
 
         public async Task<IActionResult> Delete(Guid? id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             if (!id.HasValue) return NotFound();
@@ -136,7 +157,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             SetAuthorizationHeader();
@@ -148,15 +169,13 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return NotFound();
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return NotFound();
         }
 
-
-        // Helper method to get a customer by ID
+        // Helper method to get a product type by ID
         private async Task<ProductTypeViewModel> GetProductTypeById(Guid id)
         {
             SetAuthorizationHeader();
@@ -173,6 +192,5 @@ namespace IOT_UI.Controllers
             }
             return null;
         }
-
     }
 }

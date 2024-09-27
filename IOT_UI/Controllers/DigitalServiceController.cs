@@ -7,23 +7,36 @@ namespace IOT_UI.Controllers
 {
     public class DigitalServiceController : BaseController
     {
-        public DigitalServiceController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        // Redirect to login page if JWT token is missing
-        private IActionResult RedirectToLoginIfNeeded()
+        public DigitalServiceController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection)
+            : base(httpClient, configuration)
         {
+            _apiConnection = apiConnection;
+        }
+
+        // Check API connection and redirect if necessary
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError");
+            }
+
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
                 return Redirect("~/Login/Index");
             }
+
             return null;
         }
 
         // Display digital services for a specific customer
         public async Task<IActionResult> Index(Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             // Store customerId in session
@@ -55,9 +68,9 @@ namespace IOT_UI.Controllers
         }
 
         // Display form to create a new digital service
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             var customerIdString = HttpContext.Session.GetString("CustomerId");
@@ -70,59 +83,61 @@ namespace IOT_UI.Controllers
             return View(model);
         }
 
-		// Handle POST request to create a new digital service
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Create(DigitalService service)
-		{
-			if (!ModelState.IsValid)
-			{
-				return View(service);
-			}
+        // Handle POST request to create a new digital service
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(DigitalService service)
+        {
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (redirectResult != null) return redirectResult;
 
-			var customerIdString = HttpContext.Session.GetString("CustomerId");
-			if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
-			{
-				return RedirectToAction(nameof(Index));
-			}
+            if (!ModelState.IsValid)
+            {
+                return View(service);
+            }
 
-			// Retrieve existing services for the customer
-			var existingServices = await GetDigitalServicesByCustomerId(customerId);
+            var customerIdString = HttpContext.Session.GetString("CustomerId");
+            if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
+            {
+                return RedirectToAction(nameof(Index));
+            }
 
-			// Check for overlapping dates
-			foreach (var existingService in existingServices)
-			{
-				if (DatesOverlap(service.ServiceStartDate, service.ServiceEndDate, existingService.ServiceStartDate, existingService.ServiceEndDate))
-				{
-					ModelState.AddModelError(string.Empty, "The selected dates overlap with an existing digital service. Please choose non-overlapping dates.");
-					return View(service);
-				}
-			}
+            // Retrieve existing services for the customer
+            var existingServices = await GetDigitalServicesByCustomerId(customerId);
 
-			// If no overlap, proceed to call API to create the service
-			SetAuthorizationHeader();
-			var url = $"{_configuration["ApiBaseUrl"]}Customer/AddDigitalService?customerId={service.CustomerID}";
-			var content = new StringContent(JsonConvert.SerializeObject(service), Encoding.UTF8, "application/json");
-			HttpResponseMessage response = await _httpClient.PostAsync(url, content);
+            // Check for overlapping dates
+            foreach (var existingService in existingServices)
+            {
+                if (DatesOverlap(service.ServiceStartDate, service.ServiceEndDate, existingService.ServiceStartDate, existingService.ServiceEndDate))
+                {
+                    ModelState.AddModelError(string.Empty, "The selected dates overlap with an existing digital service. Please choose non-overlapping dates.");
+                    return View(service);
+                }
+            }
 
-			if (response.IsSuccessStatusCode)
-			{
-				return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
-			}
+            // If no overlap, proceed to call API to create the service
+            SetAuthorizationHeader();
+            var url = $"{_configuration["ApiBaseUrl"]}Customer/AddDigitalService?customerId={service.CustomerID}";
+            var content = new StringContent(JsonConvert.SerializeObject(service), Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            if (response.IsSuccessStatusCode)
+            {
+                return RedirectToAction(nameof(Index), new { customerId = service.CustomerID });
+            }
 
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(service);
-		}
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
 
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(service);
+        }
 
-		// Display form to edit an existing digital service
-		[HttpGet]
+        // Display form to edit an existing digital service
+        [HttpGet]
         public async Task<IActionResult> Edit(Guid? id, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             if (id == null) return NotFound();
@@ -149,6 +164,9 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(DigitalService service, Guid customerId)
         {
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (redirectResult != null) return redirectResult;
+
             if (!ModelState.IsValid)
             {
                 return View(service);
@@ -164,18 +182,18 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index), new { customerId = customerId });
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
 
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(service);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(service);
         }
 
         // Display confirmation page for deleting a digital service
         [HttpGet]
         public async Task<IActionResult> Delete(Guid? id, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             if (id == null) return NotFound();
@@ -202,7 +220,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid digitalServiceId, Guid customerId)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null) return redirectResult;
 
             SetAuthorizationHeader();
@@ -217,10 +235,9 @@ namespace IOT_UI.Controllers
             return NotFound();
         }
 
-		private bool DatesOverlap(DateTime newStart, DateTime newEnd, DateTime existingStart, DateTime existingEnd)
-		{
-			return newStart <= existingEnd && newEnd >= existingStart;
-		}
-
-	}
+        private bool DatesOverlap(DateTime newStart, DateTime newEnd, DateTime existingStart, DateTime existingEnd)
+        {
+            return newStart <= existingEnd && newEnd >= existingStart;
+        }
+    }
 }

@@ -7,25 +7,39 @@ namespace IOT_UI.Controllers
 {
     public class DashboardController : BaseController
     {
-        public DashboardController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        private IActionResult RedirectToLoginIfNeeded()
+        public DashboardController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection) : base(httpClient, configuration)
         {
+            _apiConnection = apiConnection;
+        }
+
+        // Centralized method to check API connectivity and session status
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError"); // Redirect to API error view
+            }
+
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
-                return Redirect("~/Login/Index");
+                return Redirect("~/Login/Index"); // Redirect to login if session is missing
             }
+
             return null;
         }
 
         public async Task<IActionResult> Index()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null) return redirectResult;
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return checkResult;
 
             var customers = await GetAllCustomers();
-            
+
             var model = new DashboardDropdown
             {
                 Customers = customers
@@ -37,6 +51,10 @@ namespace IOT_UI.Controllers
         [HttpPost]
         public async Task<List<DataPoint>> GetChartData([FromBody] ChartRequest request)
         {
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return new List<DataPoint>();
+
             SetAuthorizationHeader();
 
             var url = $"{_configuration["ApiBaseUrl"]}Dashboard/GetChartData";
@@ -56,6 +74,10 @@ namespace IOT_UI.Controllers
         [HttpGet]
         private async Task<List<CustomerViewModel>> GetAllCustomers()
         {
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return new List<CustomerViewModel>();
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetAllCustomers";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -74,6 +96,10 @@ namespace IOT_UI.Controllers
         [HttpGet]
         public async Task<List<Site>> GetSitesByCustomerId(Guid customerId)
         {
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return new List<Site>();
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetCustomerSites?customerId={customerId}";
 
@@ -99,6 +125,10 @@ namespace IOT_UI.Controllers
         [HttpGet]
         public async Task<List<Device>> GetDevicesBySiteId(Guid siteId)
         {
+            // Check API connectivity and session status
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null) return new List<Device>();
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}Customer/GetSiteDevices?siteId={siteId}";
 

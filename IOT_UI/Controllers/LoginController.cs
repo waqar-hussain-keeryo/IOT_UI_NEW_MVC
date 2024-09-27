@@ -7,7 +7,12 @@ namespace IOT_UI.Controllers
 {
     public class LoginController : BaseController
     {
-        public LoginController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
+
+        public LoginController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection) : base(httpClient, configuration)
+        {
+            _apiConnection = apiConnection;
+        }
 
         // Redirect to dashboard if the user is already logged in
         private IActionResult RedirectToDashboardIfLoggedIn()
@@ -21,7 +26,7 @@ namespace IOT_UI.Controllers
         }
 
         // Display login page if user is not logged in, otherwise redirect to dashboard
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var redirectResult = RedirectToDashboardIfLoggedIn();
             if (redirectResult != null) return redirectResult;
@@ -36,6 +41,13 @@ namespace IOT_UI.Controllers
         {
             try
             {
+                if (!await _apiConnection.IsApiConnected())
+                {
+                    Console.WriteLine("API is not reachable. Please check your connection.");
+                    ViewBag.Message = "Unable to connect to the API. Please try again later.";
+                    return View("Index");
+                }
+
                 // Prepare HTTP content for the request
                 var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
                 var url = $"{_configuration["ApiBaseUrl"]}User/Login";
@@ -81,7 +93,7 @@ namespace IOT_UI.Controllers
         }
 
         // Log off the user and clear session
-        public IActionResult LogOff()
+        public async Task<IActionResult> LogOff()
         {
             HttpContext.Session.Clear();
             return RedirectToAction("Index");

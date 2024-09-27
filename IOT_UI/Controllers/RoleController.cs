@@ -7,23 +7,36 @@ namespace IOT_UI.Controllers
 {
     public class RoleController : BaseController
     {
-        public RoleController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        // Redirect to login if the user is not authenticated
-        private IActionResult RedirectToLoginIfNeeded()
+        public RoleController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection)
+            : base(httpClient, configuration)
         {
+            _apiConnection = apiConnection;
+        }
+
+        // Check API connection and redirect if necessary
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
+            {
+                HttpContext.Session.Clear();
+                return View("ApiError");
+            }
+
             var token = HttpContext.Session.GetString("JWTtoken");
             if (string.IsNullOrEmpty(token))
             {
                 return Redirect("~/Login/Index");
             }
+
             return null;
         }
 
         // Display the list of roles
         public async Task<IActionResult> Index()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -35,8 +48,7 @@ namespace IOT_UI.Controllers
         }
 
         // Fetch all roles from the API
-        [HttpGet]
-        public async Task<List<RoleViewModel>> GetAllRoles()
+        private async Task<List<RoleViewModel>> GetAllRoles()
         {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetAllRoles";
@@ -51,7 +63,7 @@ namespace IOT_UI.Controllers
                 // Return data if the API call was successful
                 if (apiResponse?.Success == true)
                 {
-                    return apiResponse.Data;
+                    return apiResponse.Data ?? new List<RoleViewModel>();
                 }
             }
 
@@ -60,9 +72,9 @@ namespace IOT_UI.Controllers
         }
 
         // Show the role creation view
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -76,7 +88,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RoleViewModel role)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -98,46 +110,33 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(role);
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(role);
         }
 
         // Show the edit view for a specific role
         public async Task<IActionResult> Edit(Guid? id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            if (id == null)
+            if (!id.HasValue)
             {
                 return NotFound();
             }
 
-            SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetRoleById/{id}";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
-
-            // Handle API response
-            if (response.IsSuccessStatusCode)
+            var role = await GetRoleById(id.Value);
+            if (role == null)
             {
-                var data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<RoleViewModel>>(data);
-
-                // Return the role data if the API call was successful
-                if (apiResponse?.Success == true)
-                {
-                    return View(apiResponse.Data);
-                }
+                return NotFound();
             }
 
-            // Return NotFound if the role is not found
-            return NotFound();
+            return View(role);
         }
 
         // Handle role updates
@@ -145,7 +144,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(RoleViewModel role)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -167,46 +166,33 @@ namespace IOT_UI.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-			string errorContent = await response.Content.ReadAsStringAsync();
-			var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
-
-			ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
-			return View(role);
+            string errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponseDTO>(errorContent);
+            ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "An unknown error occurred.");
+            return View(role);
         }
 
         // Show the delete view for a specific role
         public async Task<IActionResult> Delete(Guid? id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            if (id == null)
+            if (!id.HasValue)
             {
                 return NotFound();
             }
 
-            SetAuthorizationHeader();
-            var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetRoleById/{id}";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
-
-            // Handle API response
-            if (response.IsSuccessStatusCode)
+            var role = await GetRoleById(id.Value);
+            if (role == null)
             {
-                var data = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<RoleViewModel>>(data);
-
-                // Return the role data if the API call was successful
-                if (apiResponse?.Success == true)
-                {
-                    return View(apiResponse.Data);
-                }
+                return NotFound();
             }
 
-            // Return NotFound if the role is not found
-            return NotFound();
+            return View(role);
         }
 
         // Handle role deletion
@@ -214,7 +200,7 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
@@ -237,17 +223,29 @@ namespace IOT_UI.Controllers
         // Show details for a specific role
         public async Task<IActionResult> Details(Guid? id)
         {
-            var redirectResult = RedirectToLoginIfNeeded();
+            var redirectResult = await CheckApiConnectionAndRedirectIfNeeded();
             if (redirectResult != null)
             {
                 return redirectResult;
             }
 
-            if (id == null)
+            if (!id.HasValue)
             {
                 return NotFound();
             }
 
+            var role = await GetRoleById(id.Value);
+            if (role == null)
+            {
+                return NotFound();
+            }
+
+            return View(role);
+        }
+
+        // Helper method to get a role by ID
+        private async Task<RoleViewModel> GetRoleById(Guid id)
+        {
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/GetRoleById/{id}";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -261,12 +259,12 @@ namespace IOT_UI.Controllers
                 // Return the role data if the API call was successful
                 if (apiResponse?.Success == true)
                 {
-                    return View(apiResponse.Data);
+                    return apiResponse.Data;
                 }
             }
 
-            // Return NotFound if the role is not found
-            return NotFound();
+            // Return null if the role is not found
+            return null;
         }
     }
 }

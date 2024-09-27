@@ -1,35 +1,40 @@
 ﻿using IOT_UI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Reflection;
 using System.Text;
 
 namespace IOT_UI.Controllers
 {
     public class AdminController : BaseController
     {
-        // Constructor to initialize HttpClient and IConfiguration
-        public AdminController(HttpClient httpClient, IConfiguration configuration) : base(httpClient, configuration) { }
+        private readonly APIConnection _apiConnection;
 
-        // Helper method to redirect to login page if JWT token is missing
-        private IActionResult RedirectToLoginIfNeeded()
+        // Constructor to initialize HttpClient, IConfiguration, and APIConnection
+        public AdminController(HttpClient httpClient, IConfiguration configuration, APIConnection apiConnection) : base(httpClient, configuration)
         {
-            var token = HttpContext.Session.GetString("JWTtoken");
-            if (string.IsNullOrEmpty(token))
+            _apiConnection = apiConnection;
+        }
+
+        // Centralized method to check API connectivity and session status
+        private async Task<IActionResult> CheckApiConnectionAndRedirectIfNeeded()
+        {
+            if (!await _apiConnection.IsApiConnected())
             {
-                return Redirect("~/Login/Index");
+                HttpContext.Session.Clear();
+                return View("ApiError");
             }
+
             return null;
         }
 
         // Action to display all admins
         public async Task<IActionResult> Index()
         {
-            // Check if user needs to be redirected to login
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
+            // Check API connectivity and session validity
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null)
             {
-                return redirectResult;
+                return checkResult;
             }
 
             var users = await GetAllAdminsAsync();
@@ -64,16 +69,20 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterAdmin(UsersViewModel user, string ConfirmPassword)
         {
-            // Validate model state
-            if (!ModelState.IsValid)
+            // Check API connectivity and session validity
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null)
             {
-                return View(user);
+                return checkResult;
             }
 
-            // Check if passwords match
-            if (user.Password != ConfirmPassword)
+            // Validate model state and passwords
+            if (!ModelState.IsValid || user.Password != ConfirmPassword)
             {
-                ModelState.AddModelError("ConfirmPassword", "Passwords do not match.");
+                if (user.Password != ConfirmPassword)
+                {
+                    ModelState.AddModelError("ConfirmPassword", "Passwords do not match.");
+                }
                 return View(user);
             }
 
@@ -84,26 +93,22 @@ namespace IOT_UI.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Set a success message and redirect to login page
                 ViewBag.Message = "Admin registered successfully. Please login.";
                 return Redirect("~/Login/Index");
             }
-            else
-            {
-                // Set error message to view if registration fails
-                ViewBag.Message = "Error creating user. Please try again.";
-                return View(user);
-            }
+
+            ViewBag.Message = "Error creating user. Please try again.";
+            return View(user);
         }
 
         // Action to display the edit page for a specific user
         public async Task<IActionResult> Edit(Guid id)
         {
-            // Check if user needs to be redirected to login
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
+            // Check API connectivity and session validity
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null)
             {
-                return redirectResult;
+                return checkResult;
             }
 
             if (id == Guid.Empty)
@@ -130,13 +135,13 @@ namespace IOT_UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditUserViewModel user)
         {
-            // Check if user needs to be redirected to login
-            var redirectResult = RedirectToLoginIfNeeded();
-            if (redirectResult != null)
+            // Check API connectivity and session validity
+            var checkResult = await CheckApiConnectionAndRedirectIfNeeded();
+            if (checkResult != null)
             {
-                return redirectResult;
+                return checkResult;
             }
-            
+
             SetAuthorizationHeader();
             var url = $"{_configuration["ApiBaseUrl"]}GlobalAdmin/UpdateAdmin";
             var content = new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json");
