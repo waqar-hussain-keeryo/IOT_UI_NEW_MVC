@@ -6,13 +6,14 @@
     var siteId = ViewBag.SiteId;
 }
 
-<h1>Device List</h1>
+<h1>Devices</h1>
+<hr />
 
 <p>
     <a asp-action="Create">Create New</a>
 </p>
 
-<table class="table">
+<table id="deviceList" class="table display">
     <thead>
         <tr>
             <th>Device Name</th>
@@ -63,3 +64,18 @@
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#deviceList').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false
+            });
+        });
+    </script>
+}

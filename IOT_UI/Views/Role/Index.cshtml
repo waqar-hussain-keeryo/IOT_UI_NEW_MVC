@@ -5,13 +5,10 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>User Role List</h1>
+<h1>User Roles</h1>
+<hr />
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-
-<table class="table">
+<table id="userRoleList" class="table display">
     <thead>
         <tr>
             <th>Name</th>
@@ -58,3 +55,18 @@
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#userRoleList').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false
+            });
+        });
+    </script>
+}

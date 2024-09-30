@@ -25,25 +25,19 @@
             <ul class="sidebar-nav">
                 <li class="sidebar-item">
                     <a class="sidebar-link" asp-area="" asp-controller="Dashboard" asp-action="Index">
-                        <i class="lni lni-agenda"></i>
+                        <i class="lni lni-dashboard"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
                     <a class="sidebar-link" asp-area="" asp-controller="Admin" asp-action="Index">
-                        <i class="lni lni-agenda"></i>
+                        <i class="lni lni-cog"></i>
                         <span>Admin</span>
-                    </a>
-                </li>
-                 <li class="sidebar-item">
-                    <a class="sidebar-link" asp-area="" asp-controller="Customer" asp-action="Index">
-                        <i class="lni lni-user"></i>
-                        <span>Customer</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
                     <a class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse" data-bs-target="#auth" aria-expanded="false" aria-controls="auth">
-                        <i class="lni lni-protection"></i>
+                        <i class="lni lni-users"></i>
                         <span>Customers</span>
                     </a>
                     <ul id="auth" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
@@ -56,16 +50,32 @@
                     </ul>
                 </li>
                 <li class="sidebar-item">
-                    <a class="sidebar-link" asp-area="" asp-controller="Role" asp-action="Index">
-                        <i class="lni lni-popup"></i>
-                        <span>User Role</span>
+                    <a class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse" data-bs-target="#userRole" aria-expanded="false" aria-controls="userRole">
+                        <i class="lni lni-cog"></i>
+                        <span>User Roles</span>
                     </a>
+                    <ul id="userRole" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" asp-area="" asp-controller="Role" asp-action="Index">User Role</a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" asp-area="" asp-controller="Role" asp-action="Create">Add Role </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="sidebar-item">
-                    <a class="sidebar-link" asp-area="" asp-controller="ProductType" asp-action="Index">
+                    <a class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse" data-bs-target="#device" aria-expanded="false" aria-controls="device">
                         <i class="lni lni-cog"></i>
-                        <span>Device Type</span>
+                        <span>Device Types</span>
                     </a>
+                    <ul id="device" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" asp-area="" asp-controller="ProductType" asp-action="Index">Device Type</a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" asp-area="" asp-controller="ProductType" asp-action="Create">Add Device Type </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
             <div class="sidebar-footer">
@@ -81,40 +91,6 @@
             </main>
         </div>
     </div>
-
-    @* <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Dashboard" asp-action="Index">IOT</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Customer" asp-action="Index">Customers</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Role" asp-action="Index">User Role</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="ProductType" asp-action="Index">Device Type</a>
-                        </li>
-                    </ul>
-                    <a class="btn btn-sm btn-danger" asp-area="" asp-controller="Login" asp-action="LogOff" style="float: right;">Logout</a>
-                </div>
-            </div>
-        </nav>
-    </header>
-    @* <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div> *@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

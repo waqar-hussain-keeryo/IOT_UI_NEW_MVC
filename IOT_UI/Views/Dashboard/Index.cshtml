@@ -1,7 +1,103 @@
 ﻿@using Newtonsoft.Json
 @model IOT_UI.Models.DashboardDropdown
 
-<h1 class="mb-5">Dashboard</h1>
+<style>
+    .card {
+        transition: transform 0.2s;
+        border-radius: 15px;
+    }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+    .card-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+        margin: 0;
+    }
+
+    h2 {
+        font-size: 2.5rem;
+        margin: 0;
+    }
+
+    /* Card colors */
+    .card-customers {
+        background-color: #4CAF50;
+    }
+
+    .card-sites {
+        background-color: #2196F3;
+    }
+
+    .card-devices {
+        background-color: #FF9800;
+    }
+
+    .card-revenue {
+        background-color: #9C27B0;
+    }
+</style>
+
+<h1 class="mb-2">Dashboard</h1>
+<hr />
+
+<div class="row mb-2">
+    <div class="col-md-3">
+        <div class="card text-white card-customers">
+            <div class="card-body d-flex align-items-center justify-content-between" style="height: 100px;">
+                <i class="lni lni-users" style="font-size: 5rem; margin-right: 15px;"></i>
+                <div class="text-right">
+                    <h4 class="card-title">Customers</h4>
+                    <h2 id="customerCount">@Model.Customers.Count</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white card-sites">
+            <div class="card-body d-flex align-items-center justify-content-between" style="height: 100px;">
+                <i class="lni lni-home" style="font-size: 5rem; margin-right: 15px;"></i> <!-- Changed icon -->
+                <div class="text-right">
+                    <h4 class="card-title">Sites</h4>
+                    <h2 id="siteCount">@Model.Customers.Sum(customer => customer.Sites.Count)</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white card-devices">
+            <div class="card-body d-flex align-items-center justify-content-between" style="height: 100px;">
+                <i class="lni lni-signal" style="font-size: 5rem; margin-right: 15px;"></i>
+                <div class="text-right">
+                    <h4 class="card-title">Devices</h4>
+                    <h2 id="deviceCount">@Model.Customers.Sum(customer => customer.Sites.Sum(site => site.Devices.Count))</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white card-revenue">
+            <div class="card-body d-flex align-items-center justify-content-between" style="height: 100px;">
+                <i class="lni lni-signal-app" style="font-size: 5rem; margin-right: 15px;"></i>
+                <div class="text-right">
+                    <h4 class="card-title">Digital Service</h4>
+                    <h2 id="deviceCount">@Model.Customers.Sum(customer => customer.DigitalServices.Count)</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
 
 <div class="row mb-5">
     <div class="col-md-3">
@@ -24,7 +120,7 @@
         </select>
     </div>
     <div class="col-md-3">
-        <select id="durationDropdown" class="form-control">
+        <select id="durationDropdown" class="form-control" disabled>
             <option value="24h" selected>24 Hours</option>
             <option value="1w">1 Week</option>
             <option value="30d">1 Month</option>
@@ -34,7 +130,7 @@
 
 <div class="row mt-3">
     <div class="col-md-12">
-        <canvas id="dashboardChart"></canvas>
+        <canvas id="dashboardChart" style="width: 100%; height: 400px;"></canvas>
     </div>
 </div>
 
@@ -58,7 +154,7 @@
                             borderWidth: 1,
                             pointBackgroundColor: temperatureData.map((value, index) =>
                                 value > temperatureThresholds[index] ? 'rgba(255, 0, 0, 1)' : 'rgba(255, 99, 132, 1)'
-                            ), // Point color based on threshold
+                            ),
                             segment: {
                                 borderColor: ctx => {
                                     const index = ctx.p0DataIndex;
@@ -88,6 +184,8 @@
                     ]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
                         x: {
                             title: { display: true, text: 'Time' },
@@ -288,12 +386,14 @@
             const customerId = this.value;
             const siteDropdown = document.getElementById('siteDropdown');
             const deviceDropdown = document.getElementById('deviceDropdown');
+            const durationDropdown = document.getElementById('durationDropdown');
 
             // Clear previous options
             siteDropdown.innerHTML = '<option value="">Select Site</option>';
             deviceDropdown.innerHTML = '<option value="">Select Device</option>';
             siteDropdown.disabled = true;
             deviceDropdown.disabled = true;
+            durationDropdown.disabled = true;
 
             if (customerId) {
                 const result = await getSites(customerId);
@@ -331,10 +431,12 @@
         document.getElementById('siteDropdown').addEventListener('change', async function () {
             const siteId = this.value;
             const deviceDropdown = document.getElementById('deviceDropdown');
+            const durationDropdown = document.getElementById('durationDropdown');
 
             // Clear previous options
             deviceDropdown.innerHTML = '<option value="">Select Device</option>';
             deviceDropdown.disabled = true;
+            durationDropdown.disabled = true;
 
             if (siteId) {
                 const result = await getDevices(siteId);
@@ -354,16 +456,23 @@
         // Show Chart By Device Id
         document.getElementById('deviceDropdown').addEventListener('change', async function () {
             const deviceId = this.value;
-            const duration = document.getElementById('durationDropdown').value;
+            const durationDropdown = document.getElementById('durationDropdown');
+    
+            // Enable durationDropdown only if a device is selected
             if (deviceId) {
+                durationDropdown.disabled = false; // Enable duration dropdown
+                const duration = durationDropdown.value;
+
                 const result = await fetchData(duration, deviceId);
                 const { labels, temperatureData, windSpeedData, temperatureThresholds, windSpeedThresholds } = aggregateData(result, duration);
                 clearChart();
                 initializeChart(labels, temperatureData, windSpeedData, temperatureThresholds, windSpeedThresholds);
             } else {
+                durationDropdown.disabled = true; // Disable duration dropdown if no device is selected
                 clearChart(); // Clear the chart if no device is selected
             }
         });
+
 
     });
 </script>

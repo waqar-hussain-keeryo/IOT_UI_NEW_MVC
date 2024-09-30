@@ -4,13 +4,10 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Customer List</h1>
+<h1>Customers</h1>
+<hr />
 
-<p>
-    <a asp-action="Create">Create Customer</a>
-</p>
-
-<table class="table">
+<table id="customerTable" class="table display">
     <thead>
         <tr>
             <th>Name</th>
@@ -98,3 +95,18 @@
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#customerTable').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false
+            });
+        });
+    </script>
+}
